@@ -1,13 +1,13 @@
-# Linux MCP Troubleshooting Reproducible Scenarios
+# Linux MCP Troubleshooting Scenarios
 
-This repository contains Ansible playbooks to support the [rhel-lightspeed/linux-mcp-server](https://github.com/rhel-lightspeed/linux-mcp-server) project.
+This repository contains the Ansible playbook to support [rhel-lightspeed/linux-mcp-server](https://github.com/rhel-lightspeed/linux-mcp-server).
 
-The purpose of this work is to create **reproducible broken system states** that can be used to benchmark and compare different AI-driven troubleshooting strategies.
+The purpose of this work is to create reproducible broken system states that can be used to benchmark and compare different AI-driven troubleshooting strategies.
 
 ## Prerequisites
 
 - **Ansible** installed locally
-- A **RHEL/CentOS/Fedora** virtual machine with SSH access
+- A **RHEL** virtual machine with SSH access
 - Snapshot capability for your VM (QEMU or similar)
 
 ### Install Ansible
@@ -36,7 +36,7 @@ cp hosts.ini.example hosts.ini
 
 ## Scenarios
 
-Scenarios are triggered using Ansible tags. Each tag introduces a specific system failure.
+Scenarios are triggered using Ansible tags that introduce a specific system failure.
 
 | Scenario | Tag | Command | Failure Description |
 |----------|-----|---------|---------------------|
