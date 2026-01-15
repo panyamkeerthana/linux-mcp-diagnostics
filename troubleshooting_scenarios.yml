@@ -1,0 +1,72 @@
+---
+- name: "MCP Troubleshooting Scenarios"
+  hosts: linux_vm
+  become: yes
+  tasks:
+
+    # --- SCENARIO 1: SELinux Port Denial ---
+    - name: "Scenario 1: Break Apache with SELinux"
+      block:
+        - name: Install Apache
+          ansible.builtin.package:
+            name: httpd
+            state: present
+        - name: Configure non-standard port 8088
+          ansible.builtin.lineinfile:
+            path: /etc/httpd/conf/httpd.conf
+            regexp: '^Listen 80'
+            line: 'Listen 8088'
+        - name: Ensure SELinux is Enforcing
+          ansible.builtin.selinux:
+            policy: targeted
+            state: enforcing
+        - name: Restart Apache (Expected to log SELinux errors)
+          ansible.builtin.systemd:
+            name: httpd
+            state: restarted
+      tags: [scenario1, selinux]
+      ignore_errors: yes
+
+    # --- SCENARIO 2: SSH Permission Lockdown ---
+    - name: "Scenario 2: Break SSH Permissions"
+      block:
+        - name: Create testuser
+          ansible.builtin.user:
+            name: testuser
+            state: present
+        - name: Create .ssh folder with illegal permissions
+          ansible.builtin.file:
+            path: /home/testuser/.ssh
+            state: directory
+            mode: '0777'
+            owner: testuser
+      tags: [scenario2, ssh]
+
+    # --- SCENARIO 4: Systemd Resource Starvation ---
+    - name: "Scenario 4: OOM Kill via Systemd"
+      block:
+        - name: Set 1MB memory limit for chronyd
+          ansible.builtin.command: systemctl set-property chronyd.service MemoryMax=1M
+        - name: Restart service to trigger crash
+          ansible.builtin.systemd:
+            name: chronyd
+            state: restarted
+      tags: [scenario4, oom]
+
+    # --- SCENARIO 5: Cascading Database Failure ---
+    - name: "Scenario 5: Disk Full + Permission Issue"
+      block:
+        - name: Install MariaDB
+          ansible.builtin.package:
+            name: mariadb-server
+            state: present
+        - name: Fill disk with DISK_HOG file
+          ansible.builtin.shell: |
+            fallocate -l $(df -B1 --output=avail /var/lib/mysql | tail -1) /var/lib/mysql/DISK_HOG
+        - name: Break log folder ownership
+          ansible.builtin.file:
+            path: /var/log/mariadb
+            owner: root
+            state: directory
+      tags: [scenario5, database]
+      ignore_errors: yes
