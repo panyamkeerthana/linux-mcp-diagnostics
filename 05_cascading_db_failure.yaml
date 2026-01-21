@@ -1,0 +1,35 @@
+---
+- name: "Scenario 5: Cascading DB failure (Disk + Permissions)"
+  hosts: linux_vm
+  become: yes
+  tasks:
+    - name: Ensure MariaDB is installed
+      ansible.builtin.package:
+        name: mariadb-server
+        state: present
+        releasever: "10"
+
+    - name: Stop MariaDB
+      ansible.builtin.systemd:
+        name: mariadb
+        state: stopped
+      failed_when: false
+
+    - name: Fill disk until ENOSPC (one file)
+      ansible.builtin.shell: |
+        dd if=/dev/zero of=/var/lib/mysql/DISK_HOG bs=1M || true
+      args:
+        executable: /bin/bash
+
+    - name: Break log directory ownership
+      ansible.builtin.file:
+        path: /var/log/mariadb
+        owner: root
+        group: root
+        state: directory
+
+    - name: Attempt to start MariaDB
+      ansible.builtin.systemd:
+        name: mariadb
+        state: started
+      failed_when: false

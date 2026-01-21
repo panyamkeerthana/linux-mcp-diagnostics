@@ -1,0 +1,11 @@
+---
+- name: "Scenario 4: OOM Kill via Systemd"
+  hosts: linux_vm
+  become: yes
+  tasks:
+    - name: Set 1MB memory limit for chronyd
+      ansible.builtin.command: systemctl set-property chronyd.service MemoryMax=1M
+    - name: Restart service to trigger crash
+      ansible.builtin.systemd:
+        name: chronyd
+        state: restarted
