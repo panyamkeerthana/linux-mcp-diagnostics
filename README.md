@@ -40,8 +40,8 @@ Scenarios are triggered using Ansible tags that introduce a specific system fail
 
 | Scenario | Tag | Command | Failure Description |
 |----------|-----|---------|---------------------|
-| **SELinux Port Denial** | `scenario1` | `ansible-playbook -i hosts.ini 01_selinux_port_denial -K` | Apache configured on port 8088, blocked by SELinux policy |
-| **SSH Permission Lockdown** | `scenario2` | `ansible-playbook -i hosts.ini 02_ssh_permissions.yaml -K` | `.ssh` directory set to `0777`, blocking key-based auth |
-| **OOM Kill** | `scenario4` | `ansible-playbook -i hosts.ini 04_systemd_oom_limit.yaml -K` | `chronyd` service constrained to 1MB memory, triggers OOM |
-| **Cascading Failure** | `scenario5` | `ansible-playbook -i hosts.ini 05_cascading_db_failure.yaml --tags scenario5 -K` | MariaDB disk full + broken log directory ownership |
+| **SELinux Port Denial** | `scenario1` | `ansible-playbook -i hosts.ini scenarios/01_selinux_port_denial/scenario.yaml -K` | Apache configured on port 8088, blocked by SELinux policy |
+| **SSH Permission Lockdown** | `scenario2` | `ansible-playbook -i hosts.ini scenarios/02_ssh_permissions/scenario.yaml -K` | `.ssh` directory set to `0777`, blocking key-based auth |
+| **OOM Kill** | `scenario4` | `ansible-playbook -i hosts.ini scenarios/04_systemd_oom_limit/scenario.yaml -K` | `chronyd` service constrained to 1MB memory, triggers OOM |
+| **Cascading Failure** | `scenario5` | `ansible-playbook -i hosts.ini scenarios/05_cascading_db_failure/scenario.yaml -K` | MariaDB disk full + broken log directory ownership |
 

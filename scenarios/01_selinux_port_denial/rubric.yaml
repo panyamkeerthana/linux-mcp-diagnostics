@@ -1,0 +1,220 @@
+variables:
+  audit_log_path: /var/log/audit/audit.log
+  failed_port: '8088'
+  httpd_conf_path: /etc/httpd/conf/httpd.conf
+  ip_address: 192.168.64.2
+  os_name: Red Hat Enterprise Linux 10.1 (Coughlan)
+  os_version: '10.1'
+  recommended_port: '80'
+  selinux_config_path: /etc/selinux/config
+  selinux_state: enforcing
+  semanage_install_command: dnf install policycoreutils-python-utils
+  semanage_port_add_command_tcp: semanage port -a -t http_port_t -p tcp 8088
+  service_name: httpd
+  systemctl_start_command: systemctl start httpd
+  vi_edit_command: vi /etc/httpd/conf/httpd.conf
+dimensions:
+- tool_use_efficiency: Evaluates whether the assistant used the available tools effectively,
+    minimizing redundant or irrelevant calls.
+  grading_type: score
+  scores:
+    0: Major issues with tool usage, including excessive redundant or irrelevant calls
+      that significantly hinder progress or waste resources.
+    1: Significant redundancy or irrelevant tool calls that unnecessarily prolong
+      the interaction.
+    2: Minor redundancy or a few irrelevant tool calls, but generally on track to
+      solve the problem.
+    3: Efficient and relevant tool usage, making appropriate calls to gather necessary
+      information without unnecessary actions.
+- diagnosis_accuracy: Evaluates whether the assistant correctly identified the root
+    cause of the reported problem.
+  grading_type: binary
+- solution_effectiveness: Evaluates whether the proposed solutions are appropriate
+    and would resolve the identified problem.
+  grading_type: binary
+- solution_completeness: Evaluates whether the suggested solutions include all necessary
+    steps for successful implementation.
+  grading_type: binary
+- factual_accuracy: Evaluates whether all information provided by the assistant, including
+    diagnostic details and command outputs, is factually correct.
+  grading_type: binary
+- clarity_and_organization: Evaluates the readability, structure, and overall presentation
+    of the assistant's response.
+  grading_type: score
+  scores:
+    0: Response is unintelligible or completely unorganized.
+    1: Response is difficult to understand or poorly structured.
+    2: Response is generally clear and organized but could be improved.
+    3: Response is exceptionally clear, well-structured, and easy to follow.
+- adherence_to_request: Evaluates whether the assistant fully addressed all components
+    of the user's initial request.
+  grading_type: binary
+criteria:
+  core_diagnostic_tool_usage:
+    category: Tools
+    weight: 3
+    dimension: tool_use_efficiency
+    criterion: The assistant must call essential diagnostic tools to identify the
+      problem.
+    tool_calls:
+      respect_order: false
+      required:
+      - get_service_status:
+          min_calls: 1
+          params:
+            host: '{{ip_address}}'
+            service_name: '{{service_name}}'
+      - read_file:
+          min_calls: 1
+          params:
+            host: '{{ip_address}}'
+            path: '{{httpd_conf_path}}'
+      - read_file:
+          min_calls: 1
+          params:
+            host: '{{ip_address}}'
+            path: '{{selinux_config_path}}'
+      - get_journal_logs:
+          min_calls: 1
+          params:
+            host: '{{ip_address}}'
+            unit: '{{service_name}}'
+      - get_listening_ports:
+          min_calls: 1
+          params:
+            host: '{{ip_address}}'
+      optional: []
+      prohibited: []
+  selinux_tool_presence_check:
+    category: Tools
+    weight: 1
+    dimension: tool_use_efficiency
+    criterion: The assistant should check for the presence of SELinux management tools
+      before recommending SELinux-specific fixes.
+    tool_calls:
+      respect_order: false
+      required: []
+      optional:
+      - list_files:
+          min_calls: 1
+          params:
+            host: '{{ip_address}}'
+            path: /usr/sbin/semanage
+      - list_files:
+          min_calls: 1
+          params:
+            host: '{{ip_address}}'
+            path: /usr/bin/semanage
+      - list_files:
+          min_calls: 1
+          params:
+            host: '{{ip_address}}'
+            path: /usr/bin/audit2allow
+      prohibited: []
+  avoid_repeated_unproductive_audit_logs:
+    category: Tools
+    weight: 2
+    dimension: tool_use_efficiency
+    criterion: The assistant must avoid repeatedly calling log tools that yield no
+      useful information (e.g., 'No entries').
+    tool_calls:
+      respect_order: false
+      required: []
+      optional: []
+      prohibited:
+      - get_journal_logs: null
+      - get_audit_logs: null
+  avoid_failed_log_file_read:
+    category: Tools
+    weight: 2
+    dimension: tool_use_efficiency
+    criterion: The assistant must avoid repeating a log file read call that explicitly
+      failed due to configuration issues.
+    tool_calls:
+      respect_order: false
+      required: []
+      optional: []
+      prohibited:
+      - read_log_file: null
+  diagnosis_identifies_port_binding_issue:
+    category: Reasoning
+    weight: 3
+    dimension: diagnosis_accuracy
+    criterion: The diagnosis correctly identifies the permission denied error when
+      binding to port {{failed_port}} as the primary issue.
+  diagnosis_identifies_selinux_root_cause:
+    category: Reasoning
+    weight: 3
+    dimension: diagnosis_accuracy
+    criterion: The diagnosis correctly identifies SELinux `{{selinux_state}}` mode
+      as the root cause for the port binding permission denied error.
+  factual_accuracy_listening_port:
+    category: Accuracy
+    weight: 3
+    dimension: factual_accuracy
+    criterion: The response correctly states that Apache is configured to listen on
+      port {{failed_port}}.
+  factual_accuracy_selinux_state:
+    category: Accuracy
+    weight: 3
+    dimension: factual_accuracy
+    criterion: The response correctly states that SELinux is in `{{selinux_state}}`
+      mode.
+  solution_1_effectiveness:
+    category: Completeness
+    weight: 3
+    dimension: solution_effectiveness
+    criterion: Solution Option 1 (changing to port {{recommended_port}}) is an effective
+      and appropriate fix for the problem.
+  solution_1_completeness:
+    category: Completeness
+    weight: 2
+    dimension: solution_completeness
+    criterion: 'Solution Option 1 includes all necessary steps: editing `{{httpd_conf_path}}`
+      to `Listen {{recommended_port}}` and restarting the `{{service_name}}` service.'
+  solution_2_effectiveness_and_completeness:
+    category: Completeness
+    weight: 3
+    dimension: solution_effectiveness
+    criterion: Solution Option 2 (configuring SELinux to allow port {{failed_port}})
+      is an effective and appropriate fix, including installing `policycoreutils-python-utils`
+      if needed, using `semanage port -a -t http_port_t -p tcp {{failed_port}}`, and
+      starting the `{{service_name}}` service.
+  overall_clarity_and_organization:
+    category: Output
+    weight: from_scores
+    dimension: clarity_and_organization
+    criterion: from_scores
+metadata:
+  timestamp: '2026-01-23T13:13:29.442626'
+  operation: generate
+  model: gemini/gemini-2.5-flash
+  source_file: scenario1.md
+  source_type: chat_session
+  options:
+    num_dimensions: null
+    num_criteria: null
+    use_variables: true
+  metrics:
+    summary:
+      total_calls: 2
+      prompt_tokens: 86934
+      completion_tokens: 9511
+      total_tokens: 96445
+      estimated_cost_usd: 0.049858
+      total_time_seconds: 46.17
+    by_type:
+      generate_dimensions_from_chat:
+        total_calls: 1
+        prompt_tokens: 43215
+        completion_tokens: 2495
+        total_tokens: 45710
+        estimated_cost_usd: 0.019202
+        total_time_seconds: 12.794
+      generate_criteria_from_chat:
+        total_calls: 1
+        prompt_tokens: 43719
+        completion_tokens: 7016
+        total_tokens: 50735
+        estimated_cost_usd: 0.030656
+        total_time_seconds: 33.376

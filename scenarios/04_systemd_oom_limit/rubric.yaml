@@ -1,0 +1,177 @@
+variables:
+  drop_in_file_name: 50-MemoryMax.conf
+  drop_in_file_path: /etc/systemd/system.control/chronyd.service.d/50-MemoryMax.conf
+  host_ip: 192.168.64.2
+  mem_peak_display_value: 1M
+  memory_max_display_value: 1 MB
+  memory_max_raw_value: '1048576'
+  oom_kill_reason: oom-kill
+  service_full_name: chronyd.service
+  service_name: chronyd
+dimensions:
+- tool_use: Evaluates whether the assistant correctly selected and utilized tools
+    to gather necessary information.
+  grading_type: score
+  scores:
+    0: Required tool not called at all
+    1: Tool called but with incorrect parameters OR wrong order (if order is respected)
+    2: Tool called with correct order and parameters, but call count outside min/max
+      bounds
+    3: All applicable checks pass - tool called with correct count, correct order
+      (if order is respected), correct parameters (if params specified)
+- problem_diagnosis: Evaluates the assistant's ability to accurately identify the
+    root cause of the issue based on available information.
+  grading_type: score
+  scores:
+    0: No diagnosis or incorrect diagnosis provided.
+    1: Partial or superficial diagnosis, missing the core issue.
+    2: Correctly identified the main issue but lacked detailed explanation or context.
+    3: Accurately identified the root cause with a clear and comprehensive explanation.
+- solution_appropriateness: Evaluates whether the proposed solution directly and effectively
+    addresses the identified problem.
+  grading_type: score
+  scores:
+    0: Solution is incorrect, harmful, or completely irrelevant.
+    1: Solution is partially correct but insufficient or has significant flaws.
+    2: Solution is generally correct but could be more robust or efficient.
+    3: Solution is fully appropriate, effective, and directly resolves the problem.
+- instruction_completeness: Evaluates whether the provided instructions or steps for
+    the solution are comprehensive and include all necessary actions.
+  grading_type: score
+  scores:
+    0: Critical steps are missing, making the solution unusable.
+    1: Several important steps are missing or are vaguely described.
+    2: Most steps are present, but minor omissions or ambiguities exist.
+    3: All necessary steps are clearly provided, allowing for successful implementation.
+- factual_accuracy: Evaluates whether all factual statements, data interpretations,
+    and explanations provided by the assistant are correct.
+  grading_type: binary
+- clarity_and_organization: Evaluates the overall readability, structure, and ease
+    of understanding of the assistant's response.
+  grading_type: score
+  scores:
+    0: Response is unintelligible, disorganized, or absent.
+    1: Response is difficult to follow due to poor organization or unclear language.
+    2: Response is generally clear but could benefit from better structure or conciseness.
+    3: Response is exceptionally clear, well-structured, and easy to understand.
+criteria:
+  call_get_service_status:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must call `linux-mcp-server__get_service_status` to check
+      the service status on `{{host_ip}}` for `{{service_name}}`.
+    tool_calls:
+      respect_order: false
+      required:
+      - linux-mcp-server__get_service_status:
+          min_calls: 1
+          params:
+            host: '{{host_ip}}'
+            service_name: '{{service_name}}'
+      optional: []
+      prohibited: []
+  call_read_drop_in_file:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must call `linux-mcp-server__read_file` to inspect the
+      content of the identified drop-in configuration file `{{drop_in_file_path}}`
+      on `{{host_ip}}`.
+    tool_calls:
+      respect_order: false
+      required:
+      - linux-mcp-server__read_file:
+          min_calls: 1
+          params:
+            path: '{{drop_in_file_path}}'
+            host: '{{host_ip}}'
+      optional: []
+      prohibited: []
+  diagnosis_oom_cause:
+    category: Reasoning
+    weight: 3
+    dimension: problem_diagnosis
+    criterion: The assistant correctly identifies that the `{{service_name}}` service
+      is being killed by the OOM killer due to a strict memory limit.
+  diagnosis_memory_max_file:
+    category: Reasoning
+    weight: 3
+    dimension: problem_diagnosis
+    criterion: The assistant correctly identifies `{{drop_in_file_name}}` as the drop-in
+      file enforcing the memory limit.
+  factual_memory_max_value_interpretation:
+    category: Accuracy
+    weight: 3
+    dimension: factual_accuracy
+    criterion: The assistant correctly states that `MemoryMax={{memory_max_raw_value}}`
+      corresponds to `{{memory_max_display_value}}`.
+  factual_mem_peak_value_match:
+    category: Accuracy
+    weight: 2
+    dimension: factual_accuracy
+    criterion: The assistant correctly notes the `Mem peak` usage of `{{mem_peak_display_value}}`
+      and relates it to the `MemoryMax` limit.
+  solution_revert_command:
+    category: Output
+    weight: 3
+    dimension: solution_appropriateness
+    criterion: The assistant correctly recommends `sudo systemctl revert {{service_full_name}}`
+      as the primary fix to remove the custom memory limit.
+  instructions_daemon_reload:
+    category: Completeness
+    weight: 2
+    dimension: instruction_completeness
+    criterion: The provided instructions include reloading the systemd manager configuration
+      using `sudo systemctl daemon-reload`.
+  instructions_restart_service:
+    category: Completeness
+    weight: 2
+    dimension: instruction_completeness
+    criterion: The provided instructions include restarting the service using `sudo
+      systemctl restart {{service_name}}`.
+  instructions_verify_status:
+    category: Completeness
+    weight: 1
+    dimension: instruction_completeness
+    criterion: The provided instructions include verifying the service status after
+      the fix using `systemctl status {{service_name}}`.
+  factual_revert_explanation:
+    category: Accuracy
+    weight: 2
+    dimension: factual_accuracy
+    criterion: The assistant correctly explains that `systemctl revert` deletes the
+      `{{drop_in_file_path}}` directory and its contents.
+metadata:
+  timestamp: '2026-01-23T17:03:51.210997'
+  operation: generate
+  model: gemini/gemini-2.5-flash
+  source_file: scenario4.json
+  source_type: chat_session
+  options:
+    num_dimensions: null
+    num_criteria: null
+    use_variables: true
+  metrics:
+    summary:
+      total_calls: 2
+      prompt_tokens: 17951
+      completion_tokens: 6397
+      total_tokens: 24348
+      estimated_cost_usd: 0.021378
+      total_time_seconds: 29.523
+    by_type:
+      generate_dimensions_from_chat:
+        total_calls: 1
+        prompt_tokens: 8734
+        completion_tokens: 2658
+        total_tokens: 11392
+        estimated_cost_usd: 0.009265
+        total_time_seconds: 12.614
+      generate_criteria_from_chat:
+        total_calls: 1
+        prompt_tokens: 9217
+        completion_tokens: 3739
+        total_tokens: 12956
+        estimated_cost_usd: 0.012113
+        total_time_seconds: 16.909

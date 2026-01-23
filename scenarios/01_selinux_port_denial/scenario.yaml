@@ -6,7 +6,7 @@
 
     - name: Install Apache
       ansible.builtin.dnf:
-        name: httpdv
+        name: httpd
         state: present
         update_cache: true
         releasever: "10"
