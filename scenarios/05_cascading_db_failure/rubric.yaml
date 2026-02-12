@@ -116,33 +116,3 @@ criteria:
     dimension: clarity_and_guidance
     criterion: The response provides clear, actionable guidance for resolving both
       cascading issues in the correct order.
-metadata:
-  timestamp: '2026-01-23T17:05:34.846324'
-  operation: generate
-  model: gemini/gemini-2.5-flash
-  source_file: scenario5.json
-  source_type: chat_session
-  options:
-    num_dimensions: null
-    num_criteria: null
-    use_variables: true
-  metrics:
-    summary:
-      total_calls: 2
-      prompt_tokens: 148291
-      completion_tokens: 7178
-      total_tokens: 155469
-      total_time_seconds: 33.796
-    by_type:
-      generate_dimensions_from_chat:
-        total_calls: 1
-        prompt_tokens: 73899
-        completion_tokens: 2527
-        total_tokens: 76426
-        total_time_seconds: 13.425
-      generate_criteria_from_chat:
-        total_calls: 1
-        prompt_tokens: 74392
-        completion_tokens: 4651
-        total_tokens: 79043
-        total_time_seconds: 20.371

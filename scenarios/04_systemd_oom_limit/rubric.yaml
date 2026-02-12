@@ -1,7 +1,6 @@
 variables:
   drop_in_file_name: 50-MemoryMax.conf
   drop_in_file_path: /etc/systemd/system.control/chronyd.service.d/50-MemoryMax.conf
-  host_ip: 192.168.64.2
   mem_peak_display_value: 1M
   memory_max_display_value: 1 MB
   memory_max_raw_value: '1048576'
@@ -97,33 +96,3 @@ criteria:
     dimension: clarity_and_organization
     criterion: The assistant clearly explains the OOM issue, the systemd resource
       limit mechanism, and why the service is failing.
-metadata:
-  timestamp: '2026-01-23T17:03:51.210997'
-  operation: generate
-  model: gemini/gemini-2.5-flash
-  source_file: scenario4.json
-  source_type: chat_session
-  options:
-    num_dimensions: null
-    num_criteria: null
-    use_variables: true
-  metrics:
-    summary:
-      total_calls: 2
-      prompt_tokens: 17951
-      completion_tokens: 6397
-      total_tokens: 24348
-      total_time_seconds: 29.523
-    by_type:
-      generate_dimensions_from_chat:
-        total_calls: 1
-        prompt_tokens: 8734
-        completion_tokens: 2658
-        total_tokens: 11392
-        total_time_seconds: 12.614
-      generate_criteria_from_chat:
-        total_calls: 1
-        prompt_tokens: 9217
-        completion_tokens: 3739
-        total_tokens: 12956
-        total_time_seconds: 16.909

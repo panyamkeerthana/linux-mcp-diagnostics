@@ -129,25 +129,3 @@ criteria:
     criterion: The recommended solution includes all necessary steps to resolve the
       SSH authentication issue (ownership and permissions for both directory and
       authorized_keys file).
-metadata:
-  timestamp: '2026-02-12T11:38:15.471622'
-  operation: refine
-  model: gemini/gemini-2.5-flash
-  source_rubric_file: scenarios/02_ssh_permissions/rubric.yaml
-  options:
-    use_variables: true
-    has_feedback: true
-  metrics:
-    summary:
-      total_calls: 1
-      prompt_tokens: 3605
-      completion_tokens: 9302
-      total_tokens: 12907
-      total_time_seconds: 35.24
-    by_type:
-      refine_rubric:
-        total_calls: 1
-        prompt_tokens: 3605
-        completion_tokens: 9302
-        total_tokens: 12907
-        total_time_seconds: 35.24

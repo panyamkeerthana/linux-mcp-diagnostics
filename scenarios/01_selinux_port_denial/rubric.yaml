@@ -114,11 +114,3 @@ criteria:
     weight: from_scores
     dimension: clarity_and_organization
     criterion: from_scores
-metadata:
-  timestamp: '2026-02-12T11:00:00.000000'
-  operation: manual_refine
-  description: Manually refined to be solution-centric and tool-agnostic, focusing
-    on correct diagnosis and fix rather than specific tool usage
-  feedback_applied: Rubric should focus on end result (correctly diagnosing SELinux
-    port binding issue and providing correct fix) rather than specific diagnostic
-    tools used
