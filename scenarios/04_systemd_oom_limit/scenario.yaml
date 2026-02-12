@@ -1,3 +1,5 @@
+#Prompt Example : The chronyd service on <ip> is crashing or failing to stay active.
+#Job for chronyd.service failed because of an out-of-memory (OOM) siutation. Suggest a fix for this
 ---
 - name: "Scenario 4: OOM Kill via Systemd"
   hosts: linux_vm

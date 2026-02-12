@@ -1,3 +1,7 @@
+#Prompt Example : My remote host <ip> httpd service failed to start with a control process error.
+#Provide the diagnosis and fix for it. My remote host <ip> httpd service failed to start with
+#a control process error. Provide the diagnosis and fix for it
+
 ---
 - name: "Scenario 1: SELinux Port Denial"
   hosts: linux_vm

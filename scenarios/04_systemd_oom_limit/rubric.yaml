@@ -9,139 +9,94 @@ variables:
   service_full_name: chronyd.service
   service_name: chronyd
 dimensions:
-- tool_use: Evaluates whether the assistant correctly selected and utilized tools
-    to gather necessary information.
+- diagnosis_accuracy: Evaluates whether the assistant correctly identified the root
+    cause of the service failure.
   grading_type: score
   scores:
-    0: Required tool not called at all
-    1: Tool called but with incorrect parameters OR wrong order (if order is respected)
-    2: Tool called with correct order and parameters, but call count outside min/max
-      bounds
-    3: All applicable checks pass - tool called with correct count, correct order
-      (if order is respected), correct parameters (if params specified)
-- problem_diagnosis: Evaluates the assistant's ability to accurately identify the
-    root cause of the issue based on available information.
+    0: Failed to identify the problem or provided completely incorrect diagnosis.
+    1: Partially identified the problem but missed the OOM/memory limit root cause.
+    2: Identified memory/OOM as an issue but didn't fully explain the systemd limit
+      configuration.
+    3: Correctly identified OOM kill due to systemd memory limit and located the
+      drop-in configuration file.
+- investigation_process: Evaluates the effectiveness of the troubleshooting approach.
   grading_type: score
   scores:
-    0: No diagnosis or incorrect diagnosis provided.
-    1: Partial or superficial diagnosis, missing the core issue.
-    2: Correctly identified the main issue but lacked detailed explanation or context.
-    3: Accurately identified the root cause with a clear and comprehensive explanation.
-- solution_appropriateness: Evaluates whether the proposed solution directly and effectively
-    addresses the identified problem.
+    0: Failed to gather relevant diagnostic information.
+    1: Gathered some information but missed critical evidence.
+    2: Gathered most relevant information with minor gaps.
+    3: Comprehensively investigated logs, service status, and configuration files.
+- solution_correctness: Evaluates whether the proposed solution would actually resolve
+    the OOM issue.
   grading_type: score
   scores:
-    0: Solution is incorrect, harmful, or completely irrelevant.
-    1: Solution is partially correct but insufficient or has significant flaws.
-    2: Solution is generally correct but could be more robust or efficient.
-    3: Solution is fully appropriate, effective, and directly resolves the problem.
-- instruction_completeness: Evaluates whether the provided instructions or steps for
-    the solution are comprehensive and include all necessary actions.
-  grading_type: score
-  scores:
-    0: Critical steps are missing, making the solution unusable.
-    1: Several important steps are missing or are vaguely described.
-    2: Most steps are present, but minor omissions or ambiguities exist.
-    3: All necessary steps are clearly provided, allowing for successful implementation.
-- factual_accuracy: Evaluates whether all factual statements, data interpretations,
-    and explanations provided by the assistant are correct.
+    0: Solution would not fix the problem or would cause additional issues.
+    1: Solution is partially correct but incomplete.
+    2: Solution would work but is missing important details or verification steps.
+    3: Solution is completely correct and would fully resolve the issue.
+- solution_completeness: Evaluates whether all necessary remediation steps are included.
   grading_type: binary
-- clarity_and_organization: Evaluates the overall readability, structure, and ease
-    of understanding of the assistant's response.
+- factual_accuracy: Evaluates whether all information provided is factually correct.
+  grading_type: binary
+- clarity_and_organization: Evaluates the readability and structure of the response.
   grading_type: score
   scores:
-    0: Response is unintelligible, disorganized, or absent.
-    1: Response is difficult to follow due to poor organization or unclear language.
-    2: Response is generally clear but could benefit from better structure or conciseness.
-    3: Response is exceptionally clear, well-structured, and easy to understand.
+    0: Response is unintelligible or completely unorganized.
+    1: Response is difficult to understand or poorly structured.
+    2: Response is generally clear and organized but could be improved.
+    3: Response is exceptionally clear, well-structured, and easy to follow.
 criteria:
-  call_get_service_status:
-    category: Tools
+  root_cause_identification:
+    category: Diagnosis
+    weight: 5
+    dimension: diagnosis_accuracy
+    criterion: The assistant correctly identifies that {{service_name}} is being killed
+      by the OOM killer due to a systemd memory limit (MemoryMax).
+  configuration_file_identification:
+    category: Diagnosis
+    weight: 4
+    dimension: diagnosis_accuracy
+    criterion: The assistant identifies the drop-in configuration file ({{drop_in_file_name}}
+      or path in /etc/systemd/system/chronyd.service.d/) that enforces the memory
+      limit.
+  log_evidence_gathering:
+    category: Investigation
     weight: 3
-    dimension: tool_use
-    criterion: The assistant must call `linux-mcp-server__get_service_status` to check
-      the service status on `{{host_ip}}` for `{{service_name}}`.
-    tool_calls:
-      respect_order: false
-      required:
-      - linux-mcp-server__get_service_status:
-          min_calls: 1
-          params:
-            host: '{{host_ip}}'
-            service_name: '{{service_name}}'
-      optional: []
-      prohibited: []
-  call_read_drop_in_file:
-    category: Tools
+    dimension: investigation_process
+    criterion: The assistant gathers relevant evidence from logs (journal logs, dmesg,
+      or service status) showing OOM kill or memory-related failures, regardless of
+      the specific tool used.
+  logical_troubleshooting_approach:
+    category: Investigation
     weight: 3
-    dimension: tool_use
-    criterion: The assistant must call `linux-mcp-server__read_file` to inspect the
-      content of the identified drop-in configuration file `{{drop_in_file_path}}`
-      on `{{host_ip}}`.
-    tool_calls:
-      respect_order: false
-      required:
-      - linux-mcp-server__read_file:
-          min_calls: 1
-          params:
-            path: '{{drop_in_file_path}}'
-            host: '{{host_ip}}'
-      optional: []
-      prohibited: []
-  diagnosis_oom_cause:
-    category: Reasoning
+    dimension: investigation_process
+    criterion: The assistant follows a logical troubleshooting approach such as checking
+      service status, examining logs for OOM messages, and inspecting systemd configuration.
+  correct_remediation_approach:
+    category: Remediation
+    weight: 5
+    dimension: solution_correctness
+    criterion: The solution correctly removes or increases the memory limit, using
+      methods like systemctl revert or editing/removing the drop-in file.
+  complete_remediation_steps:
+    category: Remediation
     weight: 3
-    dimension: problem_diagnosis
-    criterion: The assistant correctly identifies that the `{{service_name}}` service
-      is being killed by the OOM killer due to a strict memory limit.
-  diagnosis_memory_max_file:
-    category: Reasoning
-    weight: 3
-    dimension: problem_diagnosis
-    criterion: The assistant correctly identifies `{{drop_in_file_name}}` as the drop-in
-      file enforcing the memory limit.
-  factual_memory_max_value_interpretation:
-    category: Accuracy
-    weight: 3
-    dimension: factual_accuracy
-    criterion: The assistant correctly states that `MemoryMax={{memory_max_raw_value}}`
-      corresponds to `{{memory_max_display_value}}`.
-  factual_mem_peak_value_match:
+    dimension: solution_completeness
+    criterion: The solution includes all necessary steps such as removing/reverting
+      the limit, reloading systemd configuration (if needed), restarting the service,
+      and verifying functionality.
+  factual_accuracy_memory_limit:
     category: Accuracy
     weight: 2
     dimension: factual_accuracy
-    criterion: The assistant correctly notes the `Mem peak` usage of `{{mem_peak_display_value}}`
-      and relates it to the `MemoryMax` limit.
-  solution_revert_command:
-    category: Output
-    weight: 3
-    dimension: solution_appropriateness
-    criterion: The assistant correctly recommends `sudo systemctl revert {{service_full_name}}`
-      as the primary fix to remove the custom memory limit.
-  instructions_daemon_reload:
-    category: Completeness
+    criterion: The assistant correctly interprets the MemoryMax value ({{memory_max_raw_value}}
+      = {{memory_max_display_value}}) and explains why it causes OOM.
+  explanation_clarity:
+    category: Communication
     weight: 2
-    dimension: instruction_completeness
-    criterion: The provided instructions include reloading the systemd manager configuration
-      using `sudo systemctl daemon-reload`.
-  instructions_restart_service:
-    category: Completeness
-    weight: 2
-    dimension: instruction_completeness
-    criterion: The provided instructions include restarting the service using `sudo
-      systemctl restart {{service_name}}`.
-  instructions_verify_status:
-    category: Completeness
-    weight: 1
-    dimension: instruction_completeness
-    criterion: The provided instructions include verifying the service status after
-      the fix using `systemctl status {{service_name}}`.
-  factual_revert_explanation:
-    category: Accuracy
-    weight: 2
-    dimension: factual_accuracy
-    criterion: The assistant correctly explains that `systemctl revert` deletes the
-      `{{drop_in_file_path}}` directory and its contents.
+    dimension: clarity_and_organization
+    criterion: The assistant clearly explains the OOM issue, the systemd resource
+      limit mechanism, and why the service is failing.
 metadata:
   timestamp: '2026-01-23T17:03:51.210997'
   operation: generate
@@ -158,7 +113,6 @@ metadata:
       prompt_tokens: 17951
       completion_tokens: 6397
       total_tokens: 24348
-      estimated_cost_usd: 0.021378
       total_time_seconds: 29.523
     by_type:
       generate_dimensions_from_chat:
@@ -166,12 +120,10 @@ metadata:
         prompt_tokens: 8734
         completion_tokens: 2658
         total_tokens: 11392
-        estimated_cost_usd: 0.009265
         total_time_seconds: 12.614
       generate_criteria_from_chat:
         total_calls: 1
         prompt_tokens: 9217
         completion_tokens: 3739
         total_tokens: 12956
-        estimated_cost_usd: 0.012113
         total_time_seconds: 16.909

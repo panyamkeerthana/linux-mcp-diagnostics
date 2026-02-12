@@ -1,3 +1,5 @@
+#Prompt Example : The MariaDB service on <ip> won't start. I suspect it might be a disk issue,
+#but even after checking that, it still won't stay running. Can you do a full diagnosis and fix all the blockers?
 ---
 - name: "Scenario 5: Cascading DB failure (Disk + Permissions)"
   hosts: linux_vm

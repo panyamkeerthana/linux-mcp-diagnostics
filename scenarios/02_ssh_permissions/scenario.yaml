@@ -1,3 +1,6 @@
+#Prompt Example : A user named 'testuser' is getting SSH failure when trying to log in via SSH to <ip>
+#Can you check the secure logs and the directory permissions to find out why?
+
 ---
 - name: "Scenario 2: Break SSH Permissions"
   hosts: linux_vm
