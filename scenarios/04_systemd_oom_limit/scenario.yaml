@@ -1,13 +1,41 @@
-#Prompt Example : The chronyd service on <ip> is crashing or failing to stay active.
-#Job for chronyd.service failed because of an out-of-memory (OOM) siutation. Suggest a fix for this
+# Prompt Example: The chronyd service on <ip> is crashing or failing to stay active.
+# Job for chronyd.service failed because of an out-of-memory (OOM) siutation.
+# Provide diagnosis and a fix for this.
 ---
 - name: "Scenario 4: OOM Kill via Systemd"
-  hosts: linux_vm
+  hosts: all
   become: yes
+
   tasks:
-    - name: Set 1MB memory limit for chronyd
-      ansible.builtin.command: systemctl set-property chronyd.service MemoryMax=1M
-    - name: Restart service to trigger crash
+    - name: Ensure chronyd is installed
+      ansible.builtin.dnf:
+        name: chrony
+        state: present
+
+    - name: Ensure chronyd is running before breaking it
       ansible.builtin.systemd:
         name: chronyd
+        state: started
+        enabled: yes
+
+    - name: Apply 1MB memory limit
+      command: systemctl set-property chronyd.service MemoryMax=1M
+
+    - name: Restart service (expected to FAIL due to OOM limit)
+      systemd:
+        name: chronyd
         state: restarted
+      failed_when: false
+
+    - name: Wait for potential failure
+      pause:
+        seconds: 5
+
+    - name: Verify the break
+      command: systemctl status chronyd
+      register: status
+      failed_when: false
+
+    - name: Show result
+      debug:
+        msg: "{{ status.stdout_lines }}"

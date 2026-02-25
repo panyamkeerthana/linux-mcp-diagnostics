@@ -1,9 +1,9 @@
-#Prompt Example : A user named 'testuser' is getting SSH failure when trying to log in via SSH to <ip>
-#Can you check the secure logs and the directory permissions to find out why?
-
+# Prompt Example: A user named “testuser” cannot log in via SSH using public key authentication and
+# receives “Permission denied” when connecting to testuser@<ip>. Diagnose the root cause
+# and fix the system so secure SSH login works again.
 ---
-- name: "Scenario 2: Break SSH Permissions"
-  hosts: linux_vm
+- name: “Scenario 2: Break SSH Permissions”
+  hosts: all
   become: yes
   vars:
     test_user: testuser
@@ -15,21 +15,16 @@
         state: present
         shell: /bin/bash
 
-    - name: Create .ssh folder with correct ownership
+    - name: Create .ssh folder
       ansible.builtin.file:
         path: "/home/{{ test_user }}/.ssh"
         state: directory
-        owner: "{{ test_user }}"
-        group: "{{ test_user }}"
-        mode: '0700'
 
     - name: Create dummy authorized_keys file
       ansible.builtin.copy:
         dest: "/home/{{ test_user }}/.ssh/authorized_keys"
         content: "ssh-rsa AAAAB3Nza... dummy_key"
         owner: "{{ test_user }}"
-        group: "{{ test_user }}"
-        mode: '0600'
 
     - name: Apply illegal permissions to .ssh directory
       ansible.builtin.file:

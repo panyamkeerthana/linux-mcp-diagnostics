@@ -1,8 +1,8 @@
-#Prompt Example : The MariaDB service on <ip> won't start. I suspect it might be a disk issue,
-#but even after checking that, it still won't stay running. Can you do a full diagnosis and fix all the blockers?
+# Prompt Example: The MariaDB service on <ip> won't start. I suspect it might be a disk issue,
+# but even after checking that, it still won't stay running. Can you do a full diagnosis and fix all the blockers?
 ---
 - name: "Scenario 5: Cascading DB failure (Disk + Permissions)"
-  hosts: linux_vm
+  hosts: all
   become: yes
   tasks:
     - name: Ensure MariaDB is installed
@@ -11,15 +11,25 @@
         state: present
         releasever: "10"
 
-    - name: Stop MariaDB
+    - name: Initialize and start MariaDB first
+      ansible.builtin.systemd:
+        name: mariadb
+        state: started
+        enabled: yes
+
+    - name: Wait for MariaDB to fully initialize
+      ansible.builtin.pause:
+        seconds: 5
+
+    - name: Stop MariaDB before breaking it
       ansible.builtin.systemd:
         name: mariadb
         state: stopped
-      failed_when: false
 
-    - name: Fill disk until ENOSPC (one file)
+    - name: Fill disk until full using fallocate
       ansible.builtin.shell: |
-        dd if=/dev/zero of=/var/lib/mysql/DISK_HOG bs=1M || true
+        AVAIL=$(df -B1 --output=avail /var/lib/mysql | tail -1)
+        fallocate -l $AVAIL /var/lib/mysql/DISK_HOG || true
       args:
         executable: /bin/bash
 
