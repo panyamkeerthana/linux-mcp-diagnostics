@@ -1,10 +1,8 @@
 variables:
   drop_in_file_name: 50-MemoryMax.conf
-  drop_in_file_path: /etc/systemd/system.control/chronyd.service.d/50-MemoryMax.conf
   mem_peak_display_value: 1M
   memory_max_display_value: 1 MB
   memory_max_raw_value: '1048576'
-  oom_kill_reason: oom-kill
   service_full_name: chronyd.service
   service_name: chronyd
 dimensions:

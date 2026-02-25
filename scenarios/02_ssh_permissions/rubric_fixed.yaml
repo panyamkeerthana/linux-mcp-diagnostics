@@ -1,0 +1,196 @@
+variables:
+  home_dir_path: /home
+  passwd_file_path: /etc/passwd
+  target_user: testuser
+dimensions:
+- tool_use: Evaluates whether the assistant correctly selected and executed tools,
+    including handling tool outputs and errors.
+  grading_type: score
+  scores:
+    0: Required tool not called at all, or tools used completely incorrectly, hindering
+      the task.
+    1: Tool called but with incorrect parameters OR wrong order (if order matters).
+      Significant issues with tool usage or poor error handling.
+    2: Tool called with correct order and parameters, but call count outside min/max
+      bounds, or some inefficiencies/minor errors in handling.
+    3: All tools used with correct count, correct order (if order matters), correct
+      parameters, and errors handled appropriately.
+- problem_diagnosis_accuracy: Evaluates whether the core issue identified by the assistant
+    is factually correct.
+  grading_type: binary
+- solution_correctness: Evaluates whether the proposed solution is technically accurate
+    and appropriate for the identified problem.
+  grading_type: binary
+- information_completeness: Evaluates whether all information relevant to the user's
+    request was provided.
+  grading_type: score
+  scores:
+    0: No relevant information provided.
+    1: Missing most requested information.
+    2: Some information provided but incomplete.
+    3: All requested information comprehensively provided.
+- response_clarity: Evaluates the overall readability, organization, and conciseness
+    of the assistant's response.
+  grading_type: score
+  scores:
+    0: Completely unintelligible or no response.
+    1: Poorly organized or difficult to understand.
+    2: Generally clear but could be improved.
+    3: Exceptionally clear and well-organized.
+- diagnostic_efficiency: Evaluates how efficiently the assistant navigated the investigation
+    to reach a conclusion, minimizing redundant or ineffective steps.
+  grading_type: score
+  scores:
+    0: Investigation was severely inefficient, with many irrelevant or repetitive
+      steps.
+    1: Investigation had significant inefficiencies or took several unnecessary steps.
+    2: Investigation was generally efficient, but with minor redundancies or slightly
+      prolonged steps.
+    3: Investigation was highly efficient, directly addressing the problem with minimal
+      unnecessary actions.
+criteria:
+  initial_todo_list_creation:
+    category: Tools
+    weight: 2
+    dimension: tool_use
+    criterion: The assistant should create an initial to-do list to structure the
+      investigation.
+    tool_calls:
+      respect_order: false
+      required:
+      - todo__todo_write:
+          min_calls: 1
+          params:
+            content: "- [ ] Investigate SSH failure for '{{target_user}}'\n\
+              \  - [ ] Check secure logs for '{{target_user}}'\n\
+              \  - [ ] Check home directory permissions for '{{target_user}}'\n  -\
+              \ [ ] Check .ssh directory permissions for '{{target_user}}'\n- [ ]\
+              \ Report findings"
+      optional: []
+      prohibited: []
+  successful_journal_log_retrieval:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must successfully retrieve journal logs for the 'sshd'
+      unit to diagnose the SSH issue, especially after failing to read /var/log/secure.
+    tool_calls:
+      respect_order: false
+      required:
+      - linux-mcp-server__get_journal_logs:
+          min_calls: 1
+          params:
+            unit: sshd
+      optional: []
+      prohibited: []
+  identification_of_ssh_permission_error:
+    category: Output
+    weight: 3
+    dimension: problem_diagnosis_accuracy
+    criterion: The assistant's final response must explicitly state the correct SSH
+      authentication error found in the logs.
+  problem_diagnosis_correctness:
+    category: Reasoning
+    weight: 3
+    dimension: problem_diagnosis_accuracy
+    criterion: The assistant must correctly identify that the SSH failure is due to
+      'bad ownership or modes for directory /home/testuser/.ssh'.
+  solution_chown_correctness:
+    category: Reasoning
+    weight: 3
+    dimension: solution_correctness
+    criterion: The proposed solution must include a correct 'chown' command to fix
+      the ownership of the .ssh directory.
+  solution_chmod_dir_correctness:
+    category: Reasoning
+    weight: 3
+    dimension: solution_correctness
+    criterion: The proposed solution must include a correct 'chmod' command to set
+      the permissions of the .ssh directory to 700.
+  solution_chmod_keys_correctness:
+    category: Reasoning
+    weight: 3
+    dimension: solution_correctness
+    criterion: The proposed solution must include a correct 'chmod' command to set
+      the permissions of the authorized_keys file to 600.
+  check_user_home_directory:
+    category: Tools
+    weight: 1
+    dimension: tool_use
+    criterion: The assistant should attempt to list directories in /home to confirm
+      the existence of the user's home directory.
+    tool_calls:
+      respect_order: false
+      required:
+      - linux-mcp-server__list_directories:
+          min_calls: 1
+          params:
+            path: '{{home_dir_path}}'
+      optional: []
+      prohibited: []
+  verify_user_existence:
+    category: Tools
+    weight: 1
+    dimension: tool_use
+    criterion: The assistant should verify the existence of the user by reading /etc/passwd.
+    tool_calls:
+      respect_order: false
+      required: []
+      optional:
+      - linux-mcp-server__read_file:
+          min_calls: 1
+          params:
+            path: '{{passwd_file_path}}'
+      prohibited: []
+  avoid_redundant_permission_denied_calls:
+    category: Tools
+    weight: 2
+    dimension: diagnostic_efficiency
+    criterion: The assistant should avoid repeatedly attempting to read files or list
+      directories that previously returned 'Permission denied' errors, especially
+      without escalating privileges.
+    tool_calls:
+      respect_order: true
+      required: []
+      optional: []
+  response_clarity_score:
+    category: Output
+    weight: from_scores
+    dimension: response_clarity
+    criterion: from_scores
+  diagnostic_efficiency_score:
+    category: Reasoning
+    weight: from_scores
+    dimension: diagnostic_efficiency
+    criterion: from_scores
+metadata:
+  operation: generate
+  model: gemini/gemini-2.5-flash
+  source_type: chat_session
+  options:
+    num_dimensions: null
+    num_criteria: null
+    use_variables: true
+  metrics:
+    summary:
+      total_calls: 2
+      prompt_tokens: 674154
+      completion_tokens: 7514
+      total_tokens: 681668
+      estimated_cost_usd: 0.221031
+      total_time_seconds: 37.724
+    by_type:
+      generate_dimensions_from_chat:
+        total_calls: 1
+        prompt_tokens: 336837
+        completion_tokens: 2403
+        total_tokens: 339240
+        estimated_cost_usd: 0.107059
+        total_time_seconds: 16.945
+      generate_criteria_from_chat:
+        total_calls: 1
+        prompt_tokens: 337317
+        completion_tokens: 5111
+        total_tokens: 342428
+        estimated_cost_usd: 0.113973
+        total_time_seconds: 20.779

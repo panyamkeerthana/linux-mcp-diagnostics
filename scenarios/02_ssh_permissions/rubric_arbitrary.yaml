@@ -1,0 +1,245 @@
+variables: {}
+dimensions:
+- tool_use: Evaluates whether the assistant correctly used tools to accomplish the
+    task, including selection, parameters, and sequencing.
+  grading_type: score
+  scores:
+    0: Required tool not called at all, or incorrect tool selected, or major errors
+      in parameters/execution.
+    1: Tool called but with incorrect parameters or wrong order (if order is critical).
+    2: Tool called with correct order and parameters, but call count outside expected
+      bounds (e.g., redundant calls).
+    3: All applicable checks pass - tool called with correct count, correct order
+      (if relevant), and correct parameters.
+- problem_diagnosis_accuracy: Evaluates whether the identified root cause of the problem
+    is factually correct based on the gathered information.
+  grading_type: binary
+- solution_appropriateness: Evaluates whether the proposed solution is technically
+    sound, safe, and directly addresses the diagnosed problem.
+  grading_type: binary
+- workflow_management: Evaluates the assistant's ability to manage the overall task
+    flow, including planning, executing steps, and updating progress.
+  grading_type: score
+  scores:
+    0: No discernible plan or completely failed to follow any logical steps.
+    1: Attempted a plan but executed it poorly, with significant deviations, inefficiencies,
+      or incorrect progress tracking.
+    2: Followed a reasonable plan but with minor inefficiencies, missed opportunities,
+      or slight inaccuracies in progress tracking.
+    3: Executed a clear, logical, and efficient workflow, adapting as needed and accurately
+      tracking progress.
+- communication_clarity: Evaluates how clearly the assistant communicates its actions,
+    findings, and requests to the user.
+  grading_type: score
+  scores:
+    0: Completely unintelligible or no response.
+    1: Poorly organized or difficult to understand.
+    2: Generally clear but could be improved.
+    3: Exceptionally clear and well-organized.
+- task_completeness: Evaluates whether the assistant fully addresses all aspects of
+    the user's initial request.
+  grading_type: score
+  scores:
+    0: No relevant progress made towards completing the task.
+    1: Only initial steps taken, most of the task remains unaddressed.
+    2: Made significant progress but did not fully complete the task or verify the
+      solution.
+    3: Fully completed the task, including verification where applicable, or clearly
+      outlined the remaining steps for the user.
+criteria:
+  initial_todo_list_creation:
+    category: Tools
+    weight: 2
+    dimension: workflow_management
+    criterion: The assistant correctly called `todo__todo_write` to create an initial
+      TODO list outlining the diagnostic and fix steps.
+    tool_calls:
+      respect_order: false
+      required:
+      - todo__todo_write:
+          min_calls: 1
+          params:
+            content: "- [ ] Explore: Check SSH configuration and user setup.\n  - [ ] Check /etc/ssh/sshd_config for PubkeyAuthentication\
+              \ and AuthorizedKeysFile.\n  - [ ] Check /home/testuser permissions.\n  - [ ]\
+              \ Check /home/testuser/.ssh permissions.\n  - [ ] Check /home/testuser/.ssh/authorized_keys\
+              \ permissions and content.\n  - [ ] Check system logs (e.g., /var/log/secure,\
+              \ /var/log/auth.log, or journalctl) for SSH errors.\n- [ ] Diagnose: Identify\
+              \ the root cause of the \"Permission denied\" error.\n- [ ] Fix: Apply the necessary\
+              \ corrections.\n- [ ] Verify: Confirm \"testuser\" can log in via SSH."
+      optional: []
+      prohibited: []
+  final_todo_list_accuracy:
+    category: Workflow
+    weight: 2
+    dimension: workflow_management
+    criterion: The assistant's final TODO list, as captured in the session data, accurately
+      reflects the completed and pending steps, including the identified root cause.
+    tool_calls:
+      respect_order: false
+      required:
+      - todo__todo_write:
+          min_calls: 1
+          params:
+            content: "- [x] Explore: Check SSH configuration and user setup.\n\
+              \  - [x] Check /etc/ssh/sshd_config for PubkeyAuthentication and AuthorizedKeysFile.\n\
+              \  - [x] Check /home/testuser permissions.\n  - [x] Check /home/testuser/.ssh\
+              \ permissions.\n  - [x] Check /home/testuser/.ssh/authorized_keys permissions\
+              \ and content.\n  - [ ] Check system logs (e.g., /var/log/secure, /var/log/auth.log,\
+              \ or journalctl) for SSH errors.\n- [x] Diagnose: Identify the root cause of the\
+              \ \"Permission denied\" error.\n  - Root cause: Incorrect permissions and ownership\
+              \ on /home/testuser/.ssh and /home/testuser/.ssh/authorized_keys.\n- [x] Fix:\
+              \ Apply the necessary corrections.\n- [ ] Verify: Confirm \"testuser\" can log\
+              \ in via SSH."
+      optional: []
+      prohibited: []
+  ssh_config_examination_tool_call:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant correctly called `run_script_readonly` to examine the
+      SSH daemon configuration file /etc/ssh/sshd_config.
+    tool_calls:
+      respect_order: true
+      required:
+      - linuxmcpserverarbitrary__run_script_readonly:
+          min_calls: 1
+          params:
+            script: cat /etc/ssh/sshd_config
+      optional: []
+      prohibited: []
+  initial_permissions_diagnostic_tool_call:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant correctly called `run_script_readonly` to check the initial
+      permissions and ownership of /home/testuser, /home/testuser/.ssh, and /home/testuser/.ssh/authorized_keys.
+    tool_calls:
+      respect_order: true
+      required:
+      - linuxmcpserverarbitrary__run_script_readonly:
+          min_calls: 1
+          params:
+            script: 'ls -ld /home/testuser
+
+              ls -ld /home/testuser/.ssh
+
+              ls -l /home/testuser/.ssh/authorized_keys
+
+              '
+      optional: []
+      prohibited: []
+  accurate_initial_ssh_dir_permissions_identification:
+    category: Accuracy
+    weight: 2
+    dimension: problem_diagnosis_accuracy
+    criterion: The assistant correctly obtained the initial permissions and ownership
+      of /home/testuser/.ssh as matching 'drwxrwxrwx. 2 root root 29 Feb 16 23:08 /home/testuser/.ssh' from
+      the tool output.
+  accurate_initial_authorized_keys_permissions_identification:
+    category: Accuracy
+    weight: 2
+    dimension: problem_diagnosis_accuracy
+    criterion: The assistant correctly obtained the initial permissions and ownership
+      of /home/testuser/.ssh/authorized_keys as matching '-rw-r--r--. 1 testuser root 30 Feb 16 23:08 /home/testuser/.ssh/authorized_keys'
+      from the tool output.
+  correct_problem_diagnosis:
+    category: Reasoning
+    weight: 3
+    dimension: problem_diagnosis_accuracy
+    criterion: The assistant accurately diagnosed the root cause as incorrect permissions
+      and ownership on /home/testuser/.ssh and /home/testuser/.ssh/authorized_keys.
+  appropriate_fix_application_tool_call:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant correctly called `run_script_modify_interactive` to apply
+      the necessary `chown` and `chmod` commands to /home/testuser/.ssh (chmod 700)
+      and /home/testuser/.ssh/authorized_keys (chmod 600, owner/group testuser:testuser).
+    tool_calls:
+      respect_order: true
+      required:
+      - linuxmcpserverarbitrary__run_script_modify_interactive:
+          min_calls: 1
+          params:
+            script: 'chown testuser:testuser /home/testuser/.ssh
+
+              chmod 700 /home/testuser/.ssh
+
+              chown testuser:testuser /home/testuser/.ssh/authorized_keys
+
+              chmod 600 /home/testuser/.ssh/authorized_keys
+
+              '
+      optional: []
+      prohibited: []
+  post_fix_permissions_verification_tool_call:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant correctly called `run_script_readonly` to verify the
+      permissions and ownership of /home/testuser/.ssh and /home/testuser/.ssh/authorized_keys
+      after the fix was applied and confirmed by the user.
+    tool_calls:
+      respect_order: true
+      required:
+      - linuxmcpserverarbitrary__run_script_readonly:
+          min_calls: 1
+          params:
+            script: 'ls -ld /home/testuser/.ssh
+
+              ls -l /home/testuser/.ssh/authorized_keys
+
+              '
+      optional: []
+      prohibited: []
+  accurate_post_fix_ssh_dir_permissions_verification:
+    category: Accuracy
+    weight: 2
+    dimension: task_completeness
+    criterion: The assistant's post-fix verification confirmed the permissions and
+      ownership of /home/testuser/.ssh were correctly set, matching 'drwx------. 2 testuser testuser 29 Feb 16 23:08 /home/testuser/.ssh'.
+  accurate_post_fix_authorized_keys_permissions_verification:
+    category: Accuracy
+    weight: 2
+    dimension: task_completeness
+    criterion: The assistant's post-fix verification confirmed the permissions and
+      ownership of /home/testuser/.ssh/authorized_keys were correctly set, matching '-rw-------. 1 testuser testuser 30 Feb 16 23:08 /home/testuser/.ssh/authorized_keys'.
+  clear_final_user_instructions:
+    category: Output
+    weight: 2
+    dimension: communication_clarity
+    criterion: The assistant provided clear final instructions for the user to verify
+      the fix by attempting SSH login, and summarized the corrections made.
+metadata:
+  timestamp: '2026-02-25T16:32:02.733836'
+  operation: generate
+  model: gemini/gemini-2.5-flash
+  source_file: scenarios/02_ssh_permissions/scenario2_arbitrary.json
+  source_type: chat_session
+  options:
+    num_dimensions: null
+    num_criteria: null
+    use_variables: true
+  metrics:
+    summary:
+      total_calls: 2
+      prompt_tokens: 38912
+      completion_tokens: 13832
+      total_tokens: 52744
+      estimated_cost_usd: 0.046254
+      total_time_seconds: 62.894
+    by_type:
+      generate_dimensions_from_chat:
+        total_calls: 1
+        prompt_tokens: 19208
+        completion_tokens: 2294
+        total_tokens: 21502
+        estimated_cost_usd: 0.011497
+        total_time_seconds: 11.523
+      generate_criteria_from_chat:
+        total_calls: 1
+        prompt_tokens: 19704
+        completion_tokens: 11538
+        total_tokens: 31242
+        estimated_cost_usd: 0.034756
+        total_time_seconds: 51.371

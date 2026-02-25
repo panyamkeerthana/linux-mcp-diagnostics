@@ -1,0 +1,173 @@
+variables:
+  drop_in_file_name: 50-MemoryMax.conf
+  mem_peak_display_value: 1M
+  memory_max_display_value: 1 MB
+  memory_max_raw_value: '1048576'
+  service_full_name: chronyd.service
+  service_name: chronyd
+dimensions:
+- tool_use: Evaluates whether the assistant correctly used tools to gather necessary
+    information or perform actions.
+  grading_type: score
+  scores:
+    0: Required tool not called at all.
+    1: Tool called but with incorrect parameters OR wrong order (if order is respected).
+    2: Tool called with correct order and parameters, but call count outside min/max
+      bounds.
+    3: All applicable checks pass - tool called with correct count, correct order
+      (if order is respected), correct parameters (if params specified).
+- factual_accuracy: Evaluates whether the information, diagnosis, and interpretations
+    provided by the assistant are factually correct.
+  grading_type: binary
+- solution_effectiveness: Evaluates whether the recommended solution is appropriate,
+    technically sound, and likely to resolve the identified problem.
+  grading_type: binary
+- completeness: Evaluates whether the assistant's response provides all the necessary
+    details, including problem explanation, solution steps, and verification.
+  grading_type: score
+  scores:
+    0: No relevant information provided.
+    1: Missing most necessary information or steps.
+    2: Some information provided, but key details or steps are incomplete.
+    3: All necessary information, explanation, and steps are comprehensively provided.
+- clarity_and_organization: Evaluates the readability, understandability, and logical
+    structure of the assistant's response.
+  grading_type: score
+  scores:
+    0: Completely unintelligible or no coherent response.
+    1: Poorly organized, difficult to follow, or contains significant grammatical
+      errors.
+    2: Generally clear and understandable, but could be better structured or more
+      concise.
+    3: Exceptionally clear, well-organized, and easy to follow.
+- adherence_to_request: Evaluates whether the assistant directly addresses the user's
+    initial problem and provides the requested output.
+  grading_type: binary
+criteria:
+  tool_check_service_status:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must use the 'linux-mcp-server__get_service_status' tool
+      to check the status of 'chronyd'.
+    tool_calls:
+      respect_order: false
+      required:
+      - linux-mcp-server__get_service_status:
+          min_calls: 1
+          params:
+            service_name: 'chronyd'
+      optional: []
+      prohibited: []
+  tool_read_drop_in_file:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must use the 'linux-mcp-server__read_file' tool to inspect
+      the content of the identified drop-in configuration file '/etc/systemd/system.control/chronyd.service.d/50-MemoryMax.conf'.
+    tool_calls:
+      respect_order: false
+      required:
+      - linux-mcp-server__read_file:
+          min_calls: 1
+          params:
+            path: '/etc/systemd/system.control/chronyd.service.d/50-MemoryMax.conf'
+      optional: []
+      prohibited: []
+  tool_no_prohibited_actions:
+    category: Tools
+    weight: 2
+    dimension: tool_use
+    criterion: The assistant must not call any destructive or inappropriate tools
+      for initial diagnosis or resolution.
+    tool_calls:
+      respect_order: true
+      required: []
+      optional: []
+  factual_accuracy_oom_result:
+    category: Accuracy
+    weight: 3
+    dimension: factual_accuracy
+    criterion: The assistant correctly identifies that the 'chronyd' service
+      failed with result 'oom-kill'.
+  factual_accuracy_drop_in_file_identification:
+    category: Accuracy
+    weight: 3
+    dimension: factual_accuracy
+    criterion: The assistant correctly identifies '{{drop_in_file_name}}' as
+      the specific drop-in configuration file causing the issue.
+  factual_accuracy_memory_max_value:
+    category: Accuracy
+    weight: 3
+    dimension: factual_accuracy
+    criterion: The assistant correctly states that the 'MemoryMax' setting in the
+      drop-in file is '{{memory_max_raw_value}}' (equivalent to '{{memory_max_display_value}}').
+  factual_accuracy_mem_peak:
+    category: Accuracy
+    weight: 2
+    dimension: factual_accuracy
+    criterion: The assistant correctly identifies the service's peak memory usage
+      as '{{mem_peak_display_value}}'.
+  reasoning_diagnosis_correctness:
+    category: Reasoning
+    weight: 3
+    dimension: factual_accuracy
+    criterion: The assistant accurately diagnoses the root cause as the 'chronyd'
+      service being killed by the OOM killer due to an extremely strict 'MemoryMax'
+      limit.
+  solution_effectiveness_revert_command:
+    category: Output
+    weight: 3
+    dimension: solution_effectiveness
+    criterion: The recommended solution to revert the custom configuration using 'sudo systemctl revert chronyd.service'
+      is appropriate and technically sound for removing the systemd drop-in.
+  solution_commands_accuracy:
+    category: Output
+    weight: 3
+    dimension: solution_effectiveness
+    criterion: The recommended commands (revert, daemon-reload, restart, verify) are
+      syntactically correct and use 'sudo' where appropriate.
+  completeness_solution_steps:
+    category: Completeness
+    weight: 2
+    dimension: completeness
+    criterion: The assistant provides all necessary sequential steps for the solution,
+      including reverting the config, reloading daemon, restarting the service, and
+      verifying status.
+  clarity_problem_explanation:
+    category: Output
+    weight: 2
+    dimension: clarity_and_organization
+    criterion: The assistant clearly explains the problem, its cause, and the rationale
+      behind the recommended fix in an easy-to-understand manner.
+metadata:
+  operation: generate
+  model: gemini/gemini-2.5-flash
+  source_type: chat_session
+  options:
+    num_dimensions: null
+    num_criteria: null
+    use_variables: true
+  metrics:
+    summary:
+      total_calls: 2
+      prompt_tokens: 17958
+      completion_tokens: 7284
+      total_tokens: 25242
+      estimated_cost_usd: 0.023597
+      total_time_seconds: 31.073
+    by_type:
+      generate_dimensions_from_chat:
+        total_calls: 1
+        prompt_tokens: 8734
+        completion_tokens: 1866
+        total_tokens: 10600
+        estimated_cost_usd: 0.007285
+        total_time_seconds: 8.617
+      generate_criteria_from_chat:
+        total_calls: 1
+        prompt_tokens: 9224
+        completion_tokens: 5418
+        total_tokens: 14642
+        estimated_cost_usd: 0.016312
+        total_time_seconds: 22.457

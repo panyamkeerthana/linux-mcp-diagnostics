@@ -1,0 +1,228 @@
+variables:
+  disk_hog_filename: DISK_HOG
+  disk_hog_path: /var/lib/mysql
+  error_code_disk_space: '28'
+  error_code_permission: '13'
+  log_file_name: mariadb.log
+  log_permission_path: /var/log/mariadb
+  owner_group: mysql
+  owner_user: mysql
+  service_name: mariadb
+dimensions:
+- tool_usage_effectiveness: Evaluates whether the assistant selected and applied the
+    available tools efficiently and appropriately to progress towards the task's objective.
+  grading_type: score
+  scores:
+    0: Tools were used incorrectly or not at all, severely hindering task completion.
+    1: Tools were used, but with significant errors, inefficiencies, or in a way that
+      impeded progress.
+    2: Tools were mostly used correctly and effectively, but with minor inefficiencies
+      or some redundant steps.
+    3: Tools were used correctly, efficiently, and effectively, leading directly to
+      task completion.
+- problem_diagnosis_accuracy: Evaluates whether the assistant accurately identified
+    the underlying causes of the reported issue.
+  grading_type: binary
+- problem_resolution_correctness: Evaluates whether the assistant successfully implemented
+    the appropriate and effective solutions to fix the identified problems.
+  grading_type: binary
+- verification_completeness: Evaluates whether the assistant performed sufficient
+    checks to confirm that the problem was fully resolved and the system was functioning
+    as expected.
+  grading_type: binary
+- output_summary_quality: Evaluates the clarity, accuracy, and comprehensiveness of
+    the final explanation or summary provided to the user.
+  grading_type: score
+  scores:
+    0: No summary provided or it was completely incorrect/unclear.
+    1: Summary is present but largely incomplete, unclear, or contains significant
+      inaccuracies.
+    2: Summary is mostly accurate and clear but lacks some details or could be better
+      organized.
+    3: Summary is fully accurate, clear, well-organized, and provides all necessary
+      details.
+- safety_and_prudence: Evaluates whether the assistant's actions and proposed modifications
+    were safe, avoided unnecessary risks, and adhered to best practices for system
+    interaction.
+  grading_type: score
+  scores:
+    0: Actions were highly risky, potentially destructive, or showed a severe lack
+      of caution.
+    1: Actions involved notable risks, questionable practices, or received significant
+      safety warnings.
+    2: Actions were generally safe but included minor questionable practices or a
+      few minor safety warnings.
+    3: All actions were safe, prudent, and adhered to best practices without any significant
+      warnings.
+- user_instruction_adherence: Evaluates how well the assistant understood and followed
+    the explicit and implicit instructions given by the user.
+  grading_type: binary
+criteria:
+  initial_diagnostic_tool_calls:
+    category: Tools
+    weight: 3
+    dimension: tool_usage_effectiveness
+    criterion: The assistant must effectively use tools for initial diagnostics, including
+      checking disk space, MariaDB service status, and general log locations.
+    tool_calls:
+      respect_order: false
+      required:
+      - linuxmcpserverarbitrary__run_script_readonly:
+          min_calls: 1
+          params:
+            script: 'df -h
+
+              echo "----------------------------------------"
+
+              systemctl status mariadb || true
+
+              echo "----------------------------------------"
+
+              # Check for common log locations
+
+              ls -l /var/log/mysql/ || true
+
+              ls -l /var/log/mariadb/ || true'
+      optional: []
+      prohibited: []
+  large_file_identification_tool_calls:
+    category: Tools
+    weight: 3
+    dimension: tool_usage_effectiveness
+    criterion: The assistant must effectively use tools to identify large files consuming
+      disk space.
+    tool_calls:
+      respect_order: false
+      required:
+      - linuxmcpserverarbitrary__run_script_readonly:
+          min_calls: 1
+          params:
+            script: find /var /tmp -type f -size +100M -exec ls -lh {} \; 2>/dev/null
+      optional: []
+      prohibited: []
+  remediation_tool_calls:
+    category: Tools
+    weight: 3
+    dimension: tool_usage_effectiveness
+    criterion: The assistant must effectively use tools to remediate the identified
+      issues, including removing the immutable attribute, deleting the large file,
+      fixing log directory permissions, and restarting MariaDB.
+    tool_calls:
+      respect_order: false
+      required:
+      - linuxmcpserverarbitrary__run_script_modify_interactive:
+          min_calls: 1
+          params:
+            script: 'chattr -i {{disk_hog_path}}/{{disk_hog_filename}} || echo "chattr failed"
+
+              rm -v {{disk_hog_path}}/{{disk_hog_filename}} || echo "Remove failed again"
+
+              ls -l {{disk_hog_path}}/{{disk_hog_filename}} || echo "File is gone"
+
+              systemctl restart {{service_name}}
+
+              systemctl status {{service_name}}'
+      - linuxmcpserverarbitrary__run_script_modify_interactive:
+          min_calls: 1
+          params:
+            script: 'chown -R {{owner_user}}:{{owner_group}} {{log_permission_path}}
+
+              ls -ld {{log_permission_path}}
+
+              systemctl restart {{service_name}}
+
+              systemctl status {{service_name}}'
+      optional: []
+      prohibited: []
+  final_verification_tool_calls:
+    category: Tools
+    weight: 3
+    dimension: tool_usage_effectiveness
+    criterion: The assistant must effectively use tools for final verification of
+      MariaDB status and connectivity.
+    tool_calls:
+      respect_order: false
+      required:
+      - linuxmcpserverarbitrary__run_script_readonly:
+          min_calls: 1
+          params:
+            script: 'mysqladmin ping
+
+              mysql -e "SELECT VERSION();"'
+      optional: []
+      prohibited: []
+  problem_diagnosis_accuracy_disk_and_file:
+    category: Reasoning
+    weight: 3
+    dimension: problem_diagnosis_accuracy
+    criterion: The assistant accurately identified the initial disk usage as 100%
+      and correctly pinpointed the {{disk_hog_filename}} file in {{disk_hog_path}} of size 7.7G
+      as a primary cause.
+  problem_diagnosis_accuracy_attributes_and_permissions:
+    category: Reasoning
+    weight: 3
+    dimension: problem_diagnosis_accuracy
+    criterion: The assistant accurately identified the immutable attribute on {{disk_hog_path}}/{{disk_hog_filename}}
+      and the 'Permission denied' error for {{log_permission_path}}/{{log_file_name}} due to incorrect
+      ownership (root:root) of {{log_permission_path}}.
+  problem_resolution_correctness:
+    category: Reasoning
+    weight: 3
+    dimension: problem_resolution_correctness
+    criterion: The assistant successfully removed {{disk_hog_path}}/{{disk_hog_filename}} (after handling
+      its immutable attribute) and correctly changed the ownership of {{log_permission_path}}
+      to {{owner_user}}:{{owner_group}}, resolving the MariaDB startup issues.
+  verification_completeness:
+    category: Completeness
+    weight: 3
+    dimension: verification_completeness
+    criterion: The assistant performed sufficient checks to confirm the {{service_name}} service
+      is 'active (running)', disk usage on '/' is reduced to 22%,
+      and database connectivity is confirmed.
+  output_summary_quality:
+    category: Output
+    weight: from_scores
+    dimension: output_summary_quality
+    criterion: from_scores
+  safety_and_prudence:
+    category: Reasoning
+    weight: from_scores
+    dimension: safety_and_prudence
+    criterion: from_scores
+  user_instruction_adherence:
+    category: Completeness
+    weight: 3
+    dimension: user_instruction_adherence
+    criterion: The assistant fully understood and followed the user's instruction
+      to perform a full diagnosis and fix all blockers for the {{service_name}} service.
+metadata:
+  operation: generate
+  model: gemini/gemini-2.5-flash
+  source_type: chat_session
+  options:
+    num_dimensions: null
+    num_criteria: null
+    use_variables: true
+  metrics:
+    summary:
+      total_calls: 2
+      prompt_tokens: 185425
+      completion_tokens: 10214
+      total_tokens: 195639
+      estimated_cost_usd: 0.081162
+      total_time_seconds: 66.47
+    by_type:
+      generate_dimensions_from_chat:
+        total_calls: 1
+        prompt_tokens: 92441
+        completion_tokens: 2566
+        total_tokens: 95007
+        estimated_cost_usd: 0.034147
+        total_time_seconds: 27.691
+      generate_criteria_from_chat:
+        total_calls: 1
+        prompt_tokens: 92984
+        completion_tokens: 7648
+        total_tokens: 100632
+        estimated_cost_usd: 0.047015
+        total_time_seconds: 38.779

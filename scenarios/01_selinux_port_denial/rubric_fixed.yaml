@@ -1,0 +1,182 @@
+variables:
+  audit_log_path: /var/log/audit/audit.log
+  failed_port: '8088'
+  httpd_conf_path: /etc/httpd/conf/httpd.conf
+  policycoreutils_package_name: policycoreutils-python-utils
+  selinux_config_path: /etc/selinux/config
+  selinux_mode: enforcing
+  semanage_path_check: /usr/sbin/semanage
+  service_name: httpd
+  standard_http_port: '80'
+dimensions:
+- tool_use: Evaluates whether the assistant correctly used tools to gather necessary
+    information or perform actions.
+  grading_type: score
+  scores:
+    0: Required tool not called at all or completely incorrect tool usage.
+    1: Tool called but with incorrect parameters OR wrong order (if order matters).
+    2: Tool called with correct order and parameters, but call count outside min/max
+      bounds.
+    3: All applicable tool checks pass (correct count, order, and parameters).
+- diagnosis_accuracy: Evaluates the factual correctness and logical soundness of the
+    identified problem and its root cause based on the provided information.
+  grading_type: binary
+- fix_relevance_correctness: Evaluates whether the suggested solutions are technically
+    accurate, directly address the diagnosed problem, and are likely to resolve it.
+  grading_type: binary
+- completeness_of_response: Evaluates whether all parts of the user's initial request,
+    including a diagnosis and suggested fixes, were addressed.
+  grading_type: score
+  scores:
+    0: No relevant information provided or completely missed the request.
+    1: Only a partial diagnosis or incomplete fixes provided, missing significant
+      aspects of the request.
+    2: Both diagnosis and fixes provided, but one or both are notably lacking in detail,
+      scope, or alternative options.
+    3: Comprehensive diagnosis and relevant fixes are provided, thoroughly addressing
+      all aspects of the request.
+- clarity_and_organization: Evaluates the readability, structure, and logical flow
+    of the assistant's overall response, including the diagnosis and suggested fixes.
+  grading_type: score
+  scores:
+    0: Completely unintelligible or no coherent response.
+    1: Poorly organized, difficult to understand, or contains significant grammatical
+      errors.
+    2: Generally clear but could be improved in terms of structure, conciseness, or
+      ease of comprehension.
+    3: Exceptionally clear, well-structured, and easy to follow, with logical progression
+      of information.
+- safety_best_practices: Evaluates if the suggested solutions adhere to general system
+    administration safety standards and recommended best practices.
+  grading_type: binary
+criteria:
+  required_diagnostic_tools_called:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must call essential diagnostic tools to gather information
+      about the httpd service, its configuration, and SELinux status.
+    tool_calls:
+      respect_order: false
+      required:
+      - linuxmcpserver__get_service_status:
+          min_calls: 1
+          params:
+            service_name: '{{service_name}}'
+      - linuxmcpserver__read_file:
+          min_calls: 1
+          params:
+            path: '{{httpd_conf_path}}'
+      - linuxmcpserver__read_file:
+          min_calls: 1
+          params:
+            path: '{{selinux_config_path}}'
+      - linuxmcpserver__list_files:
+          min_calls: 1
+          params:
+            path: '{{semanage_path_check}}'
+      optional: []
+      prohibited: []
+  optional_diagnostic_tools_called:
+    category: Tools
+    weight: 1
+    dimension: tool_use
+    criterion: The assistant should call supplementary diagnostic tools to further
+      investigate the issue, such as httpd-specific journal logs or listening ports.
+    tool_calls:
+      respect_order: true
+      required: []
+      optional:
+      - linuxmcpserver__get_journal_logs:
+          min_calls: 1
+          params:
+            unit: '{{service_name}}'
+      - linuxmcpserver__get_listening_ports:
+          min_calls: 1
+      prohibited: []
+  factual_accuracy_service_failure:
+    category: Accuracy
+    weight: 3
+    dimension: diagnosis_accuracy
+    criterion: The diagnosis accurately states that the `{{service_name}}` service
+      failed.
+  factual_accuracy_port_binding_error:
+    category: Accuracy
+    weight: 3
+    dimension: diagnosis_accuracy
+    criterion: The diagnosis correctly identifies the specific error as 'Permission
+      denied' when binding to port `{{failed_port}}`.
+  factual_accuracy_selinux_mode:
+    category: Accuracy
+    weight: 3
+    dimension: diagnosis_accuracy
+    criterion: The diagnosis accurately states that SELinux is in `{{selinux_mode}}`
+      mode.
+  diagnosis_accuracy_selinux_link:
+    category: Reasoning
+    weight: 3
+    dimension: diagnosis_accuracy
+    criterion: The diagnosis correctly links the 'Permission denied' error on port
+      `{{failed_port}}` to the `{{selinux_mode}}` SELinux policy.
+  fix_relevance_change_port_80:
+    category: Output
+    weight: 3
+    dimension: fix_relevance_correctness
+    criterion: The suggested fix correctly advises changing the Apache `Listen` directive
+      in `{{httpd_conf_path}}` to the standard port `{{standard_http_port}}`.
+  fix_relevance_selinux_modification:
+    category: Output
+    weight: 3
+    dimension: fix_relevance_correctness
+    criterion: The suggested fix provides correct instructions for modifying the SELinux
+      policy to allow port `{{failed_port}}`, including installing `{{policycoreutils_package_name}}`
+      and using the `semanage` command.
+  completeness_of_response:
+    category: Completeness
+    weight: from_scores
+    dimension: completeness_of_response
+    criterion: The response addresses all parts of the user's initial request, including
+      a diagnosis and suggested fixes.
+  clarity_and_organization:
+    category: Output
+    weight: from_scores
+    dimension: clarity_and_organization
+    criterion: The overall response, including the diagnosis and suggested fixes,
+      is well-structured, easy to read, and logically organized.
+  safety_best_practices_recommendation:
+    category: Output
+    weight: 2
+    dimension: safety_best_practices
+    criterion: The response recommends using the standard `{{standard_http_port}}`
+      as the primary and more secure solution, adhering to best practices.
+metadata:
+  operation: generate
+  model: gemini/gemini-2.5-flash
+  source_type: chat_session
+  options:
+    num_dimensions: null
+    num_criteria: null
+    use_variables: true
+  metrics:
+    summary:
+      total_calls: 2
+      prompt_tokens: 271891
+      completion_tokens: 9181
+      total_tokens: 281072
+      estimated_cost_usd: 0.10452
+      total_time_seconds: 40.357
+    by_type:
+      generate_dimensions_from_chat:
+        total_calls: 1
+        prompt_tokens: 135691
+        completion_tokens: 1660
+        total_tokens: 137351
+        estimated_cost_usd: 0.044857
+        total_time_seconds: 9.38
+      generate_criteria_from_chat:
+        total_calls: 1
+        prompt_tokens: 136200
+        completion_tokens: 7521
+        total_tokens: 143721
+        estimated_cost_usd: 0.059663
+        total_time_seconds: 30.977

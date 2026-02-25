@@ -1,2 +1,4 @@
 hosts.ini
 .DS_Store
+scenario*.json
+s*.txt

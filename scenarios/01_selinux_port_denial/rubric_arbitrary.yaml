@@ -1,0 +1,229 @@
+variables:
+  host_ip: 192.168.65.24
+  service_name: httpd
+  target_port: '8088'
+dimensions:
+- tool_use: Evaluates whether the assistant correctly used tools to accomplish the
+    task, including correct selection, proper ordering, and completeness of calls.
+  grading_type: score
+  scores:
+    0: Required tool not called at all, or tool usage was completely incorrect/detrimental.
+    1: Tool called but with incorrect parameters OR wrong order (if order is respected).
+    2: Tool called with correct order and parameters, but call count was outside min/max
+      bounds.
+    3: All applicable checks pass - tool called with correct count, correct order
+      (if respected), and correct parameters.
+- diagnosis_accuracy: Evaluates whether the identified root cause of the problem is
+    factually correct.
+  grading_type: binary
+- fix_effectiveness: Evaluates whether the proposed solution successfully resolves
+    the identified problem.
+  grading_type: binary
+- response_completeness: Evaluates whether all requested information was provided
+    in the final output.
+  grading_type: score
+  scores:
+    0: No relevant information provided.
+    1: Missing most requested information.
+    2: Some information provided but incomplete.
+    3: All requested information comprehensively provided.
+- explanation_clarity: Evaluates how clearly and understandably the diagnosis, fix,
+    and verification steps are explained to the user.
+  grading_type: score
+  scores:
+    0: Completely unintelligible or no explanation.
+    1: Poorly organized or difficult to understand explanation.
+    2: Generally clear but could be improved for better understanding.
+    3: Exceptionally clear and well-organized explanation.
+- problem_solving_efficiency: Evaluates the efficiency of the assistant's problem-solving
+    approach, minimizing unnecessary steps or redundant actions.
+  grading_type: score
+  scores:
+    0: Highly inefficient, with many irrelevant or redundant steps.
+    1: Somewhat inefficient, with several redundant or misdirected steps.
+    2: Generally efficient, with only minor inefficiencies.
+    3: Highly efficient, taking a direct and optimal path to the solution.
+- safety_and_best_practices: Evaluates whether the assistant adhered to safety protocols
+    and best practices when performing system modifications or potentially risky operations.
+  grading_type: binary
+criteria:
+  initial_httpd_status_check:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must effectively check the initial status of the {{service_name}}
+      service, capturing both stdout and stderr, to diagnose the problem.
+    tool_calls:
+      respect_order: false
+      required:
+      - linuxmcpserverarbitrary__run_script_readonly:
+          min_calls: 1
+          params:
+            host: '{{host_ip}}'
+            script_type: python
+            script: "import subprocess\n\ntry:\n    result = subprocess.run(\n   \
+              \     ['systemctl', 'status', 'httpd'],\n        capture_output=True,\n\
+              \        text=True,\n        check=True\n    )\n    print(\"STDOUT:\"\
+              , result.stdout)\nexcept subprocess.CalledProcessError as e:\n    print(f\"\
+              Error executing command: {e}\")\n    print(\"STDOUT:\", e.stdout)\n\
+              \    print(\"STDERR:\", e.stderr)\n"
+      optional: []
+      prohibited: []
+  check_port_listening:
+    category: Tools
+    weight: 2
+    dimension: tool_use
+    criterion: The assistant must check if any process is already listening on port
+      {{target_port}}.
+    tool_calls:
+      respect_order: false
+      required:
+      - linuxmcpserverarbitrary__run_script_readonly:
+          min_calls: 1
+          params:
+            host: '{{host_ip}}'
+            script: ss -tuln | grep :{{target_port}}
+            script_type: bash
+      optional: []
+      prohibited: []
+  selinux_diagnostic_tools:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must use appropriate tools to diagnose SELinux status
+      ('getenforce') and list configured http_port_t types ('semanage port -l').
+    tool_calls:
+      respect_order: false
+      required:
+      - linuxmcpserverarbitrary__run_script_readonly:
+          min_calls: 1
+          params:
+            host: '{{host_ip}}'
+            script: getenforce
+            script_type: bash
+      - linuxmcpserverarbitrary__run_script_readonly:
+          min_calls: 1
+          params:
+            host: '{{host_ip}}'
+            script: semanage port -l | grep http_port_t
+            script_type: bash
+      optional: []
+      prohibited: []
+  add_selinux_port_fix:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must add TCP port {{target_port}} to the SELinux http_port_t
+      type as part of the fix.
+    tool_calls:
+      respect_order: false
+      required:
+      - linuxmcpserverarbitrary__run_script_modify_interactive:
+          min_calls: 1
+          params:
+            host: '{{host_ip}}'
+            script: semanage port -a -t http_port_t -p tcp {{target_port}}
+            script_type: bash
+      optional: []
+      prohibited: []
+  start_httpd_service:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must attempt to start the {{service_name}} service after
+      applying the fix.
+    tool_calls:
+      respect_order: false
+      required:
+      - linuxmcpserverarbitrary__run_script_modify_interactive:
+          min_calls: 1
+          params:
+            host: '{{host_ip}}'
+            script: systemctl start httpd
+            script_type: bash
+      optional: []
+      prohibited: []
+  final_httpd_status_verification:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must verify the final running status of the {{service_name}}
+      service after attempting to start it.
+    tool_calls:
+      respect_order: false
+      required:
+      - linuxmcpserverarbitrary__run_script_readonly:
+          min_calls: 1
+          params:
+            host: '{{host_ip}}'
+            script: systemctl status httpd
+            script_type: bash
+      optional: []
+      prohibited: []
+  todo_tool_use:
+    category: Tools
+    weight: 1
+    dimension: tool_use
+    criterion: The assistant used the todo tool to track progress.
+    tool_calls:
+      respect_order: true
+      required: []
+      optional:
+      - todo__todo_write:
+          min_calls: 1
+      prohibited: []
+  correct_diagnosis_selinux_port:
+    category: Reasoning
+    weight: 3
+    dimension: diagnosis_accuracy
+    criterion: The diagnosis correctly identifies SELinux denying bind to port {{target_port}}
+      as the root cause.
+  fix_successfully_starts_service:
+    category: Reasoning
+    weight: 3
+    dimension: fix_effectiveness
+    criterion: The proposed solution successfully resolves the identified problem,
+      confirmed by the {{service_name}} service running and listening on port {{target_port}}.
+  response_includes_diagnosis_fix_verification:
+    category: Completeness
+    weight: from_scores
+    dimension: response_completeness
+    criterion: The final response clearly provides a diagnosis, a fix, and verification
+      steps.
+  explanation_is_clear_and_understandable:
+    category: Output
+    weight: from_scores
+    dimension: explanation_clarity
+    criterion: The diagnosis, fix, and verification steps are explained clearly and
+      understandably to the user.
+metadata:
+  operation: generate
+  model: gemini/gemini-2.5-flash
+  source_type: chat_session
+  options:
+    num_dimensions: null
+    num_criteria: null
+    use_variables: true
+  metrics:
+    summary:
+      total_calls: 2
+      prompt_tokens: 55643
+      completion_tokens: 13893
+      total_tokens: 69536
+      estimated_cost_usd: 0.051425
+      total_time_seconds: 58.018
+    by_type:
+      generate_dimensions_from_chat:
+        total_calls: 1
+        prompt_tokens: 27564
+        completion_tokens: 1867
+        total_tokens: 29431
+        estimated_cost_usd: 0.012937
+        total_time_seconds: 9.067
+      generate_criteria_from_chat:
+        total_calls: 1
+        prompt_tokens: 28079
+        completion_tokens: 12026
+        total_tokens: 40105
+        estimated_cost_usd: 0.038489
+        total_time_seconds: 48.951

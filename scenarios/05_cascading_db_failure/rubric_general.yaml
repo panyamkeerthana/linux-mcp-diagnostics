@@ -1,9 +1,6 @@
 variables:
   disk_hog_filename: DISK_HOG
   disk_hog_path: /var/lib/mysql
-  disk_mount_point: /
-  disk_root_filesystem: /dev/mapper/rhel-root
-  disk_usage_percent: 100%
   error_code_disk_space: '28'
   error_code_permission: '13'
   log_file_name: mariadb.log

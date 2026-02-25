@@ -1,0 +1,194 @@
+variables:
+  disk_hog_filename: DISK_HOG
+  disk_hog_path: /var/lib/mysql
+  error_code_disk_space: '28'
+  error_code_permission: '13'
+  log_file_name: mariadb.log
+  log_permission_path: /var/log/mariadb
+  owner_group: mysql
+  owner_user: mysql
+  service_name: mariadb
+dimensions:
+- tool_use: Evaluates whether the assistant correctly used tools to accomplish the
+    task, considering tool selection, parameters, and call count.
+  grading_type: score
+  scores:
+    0: Required tool not called at all, or tools were used completely incorrectly.
+    1: Tool called but with incorrect parameters OR wrong order (if order is respected).
+    2: Tool called with correct order and parameters, but call count outside min/max
+      bounds (e.g., too many redundant calls).
+    3: All applicable checks pass - tool called with correct count, correct order
+      (if order is respected), correct parameters.
+- diagnostic_accuracy: Evaluates whether the assistant accurately identified and interpreted
+    the root causes of the reported problem based on the gathered information.
+  grading_type: binary
+- problem_resolution_plan_quality: Evaluates whether the proposed steps to resolve
+    the problem are logical, technically sound, and directly address the identified
+    root causes.
+  grading_type: binary
+- completeness_of_resolution: Assesses the extent to which the assistant directly
+    resolved the problem or provided comprehensive, actionable instructions for its
+    resolution.
+  grading_type: score
+  scores:
+    0: No attempt at resolution or provided completely incorrect/unhelpful steps.
+    1: Identified some resolution steps but failed to provide clear instructions or
+      the steps were largely incomplete.
+    2: Identified correct resolution steps and provided some instructions, but significant
+      gaps or ambiguities remained, requiring further user effort to complete.
+    3: Identified correct resolution steps and provided clear, complete, and actionable
+      instructions, enabling the user to fully resolve the problem (even if manual
+      intervention was required).
+- clarity_and_readability: Evaluates how easy it is to understand the assistant's
+    explanations, summaries, and instructions.
+  grading_type: score
+  scores:
+    0: Response is unclear, disorganized, or contains excessive jargon without explanation.
+    1: Response is somewhat understandable but suffers from poor organization, ambiguity,
+      or unnecessary complexity.
+    2: Response is generally clear and well-structured, but minor improvements in
+      conciseness or explanation could be made.
+    3: Response is exceptionally clear, concise, well-organized, and easy to follow.
+- adherence_to_user_intent: Evaluates whether the assistant fully understood and addressed
+    all aspects of the user's initial request and overall goal.
+  grading_type: binary
+- proactive_guidance: Evaluates whether the assistant provided clear, safe, and actionable
+    guidance for steps it could not perform itself, especially when user intervention
+    is required.
+  grading_type: binary
+criteria:
+  tool_call_get_service_status:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant correctly called `linux-mcp-server__get_service_status`
+      to check the MariaDB service status.
+    tool_calls:
+      respect_order: true
+      required:
+      - linux-mcp-server__get_service_status:
+          min_calls: 1
+          params:
+            service_name: '{{service_name}}'
+      optional: []
+      prohibited: []
+  tool_call_get_disk_usage:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant correctly called `linux-mcp-server__get_disk_usage` to
+      assess disk space.
+    tool_calls:
+      respect_order: true
+      required:
+      - linux-mcp-server__get_disk_usage:
+          min_calls: 1
+          params: {}
+      optional: []
+      prohibited: []
+  tool_call_list_files_var_lib_mysql:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant correctly called `linux-mcp-server__list_files` to identify
+      the large file in the MariaDB data directory.
+    tool_calls:
+      respect_order: true
+      required:
+      - linux-mcp-server__list_files:
+          min_calls: 1
+          params:
+            path: '{{disk_hog_path}}'
+            order_by: size
+            sort: descending
+      optional: []
+      prohibited: []
+  diagnostic_service_status:
+    category: Reasoning
+    weight: 3
+    dimension: diagnostic_accuracy
+    criterion: The assistant accurately identified the `{{service_name}}.service`
+      as 'failed'.
+  diagnostic_disk_space_root_cause:
+    category: Reasoning
+    weight: 3
+    dimension: diagnostic_accuracy
+    criterion: 'The assistant accurately identified ''No space left on device'' (Errcode:
+      {{error_code_disk_space}}) and the `{{disk_hog_filename}}` file (57.7GB)
+      filling the `/` filesystem (100%
+      used, 2.2M available) as a root cause.'
+  diagnostic_permission_root_cause:
+    category: Reasoning
+    weight: 3
+    dimension: diagnostic_accuracy
+    criterion: 'The assistant accurately identified ''Permission denied'' (errno:
+      {{error_code_permission}}) for writing to `{{log_permission_path}}` as a root
+      cause.'
+  plan_remove_disk_hog:
+    category: Reasoning
+    weight: 3
+    dimension: problem_resolution_plan_quality
+    criterion: The proposed resolution plan logically includes removing the `{{disk_hog_path}}/{{disk_hog_filename}}`
+      file.
+  plan_fix_permissions:
+    category: Reasoning
+    weight: 3
+    dimension: problem_resolution_plan_quality
+    criterion: The proposed resolution plan logically includes correcting permissions
+      on the `{{log_permission_path}}` directory.
+  completeness_tool_limitations:
+    category: Completeness
+    weight: from_scores
+    dimension: completeness_of_resolution
+    criterion: The assistant clearly stated its limitations regarding performing file
+      deletion or permission changes directly.
+  proactive_guidance_manual_commands:
+    category: Output
+    weight: 3
+    dimension: proactive_guidance
+    criterion: The assistant provided specific, actionable manual commands (`rm {{disk_hog_path}}/{{disk_hog_filename}}`
+      and `chown {{owner_user}}:{{owner_group}} {{log_permission_path}}`) for the user
+      to execute.
+  clarity_summary_and_instructions:
+    category: Output
+    weight: from_scores
+    dimension: clarity_and_readability
+    criterion: The summary of findings, root causes, and next steps, including manual
+      instructions, is clear and easy to understand.
+  adherence_full_diagnostic_and_blockers:
+    category: Completeness
+    weight: 2
+    dimension: adherence_to_user_intent
+    criterion: The assistant performed a 'full diagnostic' and provided a comprehensive
+      plan to 'fix all the blockers' as requested by the user.
+metadata:
+  operation: generate
+  model: gemini/gemini-2.5-flash
+  source_type: chat_session
+  options:
+    num_dimensions: null
+    num_criteria: null
+    use_variables: true
+  metrics:
+    summary:
+      total_calls: 2
+      prompt_tokens: 148352
+      completion_tokens: 8551
+      total_tokens: 156903
+      estimated_cost_usd: 0.065883
+      total_time_seconds: 68.95
+    by_type:
+      generate_dimensions_from_chat:
+        total_calls: 1
+        prompt_tokens: 73899
+        completion_tokens: 3903
+        total_tokens: 77802
+        estimated_cost_usd: 0.031927
+        total_time_seconds: 36.698
+      generate_criteria_from_chat:
+        total_calls: 1
+        prompt_tokens: 74453
+        completion_tokens: 4648
+        total_tokens: 79101
+        estimated_cost_usd: 0.033956
+        total_time_seconds: 32.251

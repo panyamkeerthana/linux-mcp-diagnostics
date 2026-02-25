@@ -1,0 +1,165 @@
+variables:
+  drop_in_file_name: 50-MemoryMax.conf
+  mem_peak_display_value: 1M
+  memory_max_display_value: 1 MB
+  memory_max_raw_value: '1048576'
+  service_full_name: chronyd.service
+  service_name: chronyd
+dimensions:
+- tool_use: Evaluates whether the assistant correctly selected, ordered, and parameterized
+    tools to accomplish the task.
+  grading_type: score
+  scores:
+    0: Required tool not called at all.
+    1: Tool called but with incorrect parameters OR wrong order (if order is respected).
+    2: Tool called with correct order and parameters, but call count outside min/max
+      bounds.
+    3: All applicable checks pass - tool called with correct count, correct order
+      (if order is respected), correct parameters (if specified).
+- problem_diagnosis: Evaluates the assistant's ability to accurately understand the
+    initial problem and diagnose its root cause using available information.
+  grading_type: binary
+- solution_appropriateness: Evaluates whether the proposed solution or action is relevant,
+    effective, and safe for the diagnosed problem.
+  grading_type: binary
+- output_completeness: Evaluates whether all necessary information, steps, or actions
+    were provided to address the user's request.
+  grading_type: score
+  scores:
+    0: No relevant information or steps provided.
+    1: Missing most requested information or critical steps.
+    2: Some information or steps provided but incomplete.
+    3: All necessary information and steps comprehensively provided.
+- clarity_and_coherence: Evaluates the readability, organization, and logical flow
+    of the assistant's responses and actions.
+  grading_type: score
+  scores:
+    0: Completely unintelligible or no meaningful response/action.
+    1: Poorly organized, difficult to understand, or illogical.
+    2: Generally clear and coherent but could be improved.
+    3: Exceptionally clear, well-organized, and logically coherent.
+- adherence_to_protocol: Evaluates if the assistant correctly followed any specified
+    interaction protocols, such as waiting for user approval or not responding prematurely.
+  grading_type: binary
+criteria:
+  initial_diagnosis_tool_call:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must use the linuxmcpserverarbitrary__run_script_readonly tool to diagnose
+      the chronyd service configuration.
+    tool_calls:
+      respect_order: true
+      required:
+      - 'linuxmcpserverarbitrary__run_script_readonly':
+          min_calls: 1
+          params:
+            script: 'systemctl cat chronyd.service'
+            description: 'Read the chronyd service unit file to check for memory limits.'
+      optional: []
+      prohibited: []
+  solution_application_tool_call:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must use the linuxmcpserverarbitrary__run_script_modify_interactive tool to apply the proposed
+      fix.
+    tool_calls:
+      respect_order: true
+      required:
+      - 'linuxmcpserverarbitrary__run_script_modify_interactive':
+          min_calls: 1
+          params:
+            script: 'rm /etc/systemd/system.control/chronyd.service.d/50-MemoryMax.conf
+
+              systemctl daemon-reload
+
+              systemctl restart chronyd
+
+              systemctl status chronyd'
+            description: 'Remove the MemoryMax drop-in configuration for chronyd, reload systemd, and restart chronyd.'
+      optional: []
+      prohibited: []
+  problem_diagnosis_correctly_identified_memory_limit:
+    category: Reasoning
+    weight: 3
+    dimension: problem_diagnosis
+    criterion: The assistant correctly identified that the '{{service_name}}' service
+      had a 'MemoryMax' limit of {{memory_max_raw_value}} set, which caused the
+      OOM situation.
+  solution_appropriateness_remove_memory_max:
+    category: Reasoning
+    weight: 3
+    dimension: solution_appropriateness
+    criterion: The proposed solution correctly targets the removal of the '/etc/systemd/system.control/chronyd.service.d/50-MemoryMax.conf'
+      configuration file to resolve the OOM issue.
+  solution_appropriateness_includes_daemon_reload:
+    category: Reasoning
+    weight: 2
+    dimension: solution_appropriateness
+    criterion: The proposed solution includes 'systemctl daemon-reload' to ensure
+      systemd recognizes the configuration changes.
+  solution_appropriateness_includes_service_restart:
+    category: Reasoning
+    weight: 2
+    dimension: solution_appropriateness
+    criterion: The proposed solution includes restarting the '{{service_name}}' service
+      to apply the new configuration.
+  output_completeness_includes_status_check:
+    category: Completeness
+    weight: 1
+    dimension: output_completeness
+    criterion: The proposed solution includes checking the status of the '{{service_name}}'
+      service after the fix to verify its state.
+  adherence_to_protocol_waits_for_approval:
+    category: Output
+    weight: 3
+    dimension: adherence_to_protocol
+    criterion: The assistant correctly waited for user approval after proposing a
+      modifying action and did not send a premature text response to the user, as
+      indicated by the empty last message.
+  clarity_of_initial_tool_description:
+    category: Output
+    weight: 1
+    dimension: clarity_and_coherence
+    criterion: The description provided for the initial readonly tool call ('Read the chronyd service unit file to check for memory limits.')
+      clearly states its purpose.
+  clarity_of_modify_tool_description:
+    category: Output
+    weight: 1
+    dimension: clarity_and_coherence
+    criterion: The description provided for the modify tool call ('Remove the MemoryMax drop-in configuration for chronyd, reload systemd, and restart chronyd.')
+      clearly states its purpose.
+metadata:
+  timestamp: '2026-02-25T16:56:11.340162'
+  operation: generate
+  model: gemini/gemini-2.5-flash
+  source_file: scenarios/04_systemd_oom_limit/scenario4_arbitrary.json
+  source_type: chat_session
+  options:
+    num_dimensions: null
+    num_criteria: null
+    use_variables: true
+  metrics:
+    summary:
+      total_calls: 2
+      prompt_tokens: 14456
+      completion_tokens: 7946
+      total_tokens: 22402
+      estimated_cost_usd: 0.024202
+      total_time_seconds: 54.28
+    by_type:
+      generate_dimensions_from_chat:
+        total_calls: 1
+        prompt_tokens: 6977
+        completion_tokens: 2070
+        total_tokens: 9047
+        estimated_cost_usd: 0.007268
+        total_time_seconds: 9.49
+      generate_criteria_from_chat:
+        total_calls: 1
+        prompt_tokens: 7479
+        completion_tokens: 5876
+        total_tokens: 13355
+        estimated_cost_usd: 0.016934
+        total_time_seconds: 44.79
