@@ -35,7 +35,7 @@ cp hosts.ini.example hosts.ini
 
 ## VM Automation (Optional)
 
-This project integrates with [mcp-vm-scripts](https://github.com/owtaylor/mcp-vm-scripts) to automatically create VMs and run scenario playbooks for testing troubleshooting scenarios in isolated environments.
+This project can be integrated with [mcp-vm-scripts](https://github.com/owtaylor/mcp-vm-scripts) to automatically create VMs and run scenario playbooks for testing troubleshooting scenarios in isolated environments.
 
 ### Installation
 
@@ -44,13 +44,10 @@ Install mcp-vm-scripts by following the instructions at [GitHub repository](http
 Once installed, you can create a VM and automatically run a scenario playbook:
 
 ```bash
-./tools/mcpvm setup --playbook=<path to linux-mcp-diagnostics>/scenarios/04_systemd_oom_limit/scenario.yaml --version=10.1
+./tools/mcpvm setup --playbook=<path to linux-mcp-diagnostics>/scenarios/01_selinux_port_denial/scenario.yaml --version=<RHEL-VERSION>
 ```
 
-This command will:
-1. Create a new RHEL VM
-2. Configure it with SSH access
-3. Run the specified scenario playbook to introduce the failure
+This command will create a new RHEL VM, configure it with SSH access and run the specified scenario playbook to introduce the failure
 
 For managing VMs
 
@@ -62,7 +59,8 @@ For managing VMs
 ./tools/mcpvm delete <vm-name>
 ```
 
-For detailed setup instructions, VM management commands, and platform-specific requirements, see the mcp-vm-scripts documentation.
+
+For detailed setup instructions and VM management commands see the [mcp-vm-scripts documentation](https://github.com/owtaylor/mcp-vm-scripts).
 
 ## Scenarios
 
@@ -86,7 +84,7 @@ This project integrates with [rubric-kit](https://github.com/narmaku/rubric-kit)
 pip install rubric-kit
 ```
 
-For detailed installation and setup instructions, see the [rubric-kit documentation](https://github.com/narmaku/rubric-kit).
+For detailed installation and setup instructions, see the [rubric-kit documentation](https://pypi.org/project/rubric-kit/) or [GitHub repository](https://github.com/narmaku/rubric-kit).
 
 ### Usage
 
@@ -95,7 +93,7 @@ For detailed installation and setup instructions, see the [rubric-kit documentat
 ```bash
 rubric-kit generate --from-chat-session scenarios/01_selinux_port_denial/<chat-session-file.txt> \
   --output-file scenarios/01_selinux_port_denial/rubric.yaml \
-  --model gemini/gemini-2.5-flash
+  --model <MODEL_FORMAT>
 ```
 
 #### Evaluate a Chat Session Against a Rubric
