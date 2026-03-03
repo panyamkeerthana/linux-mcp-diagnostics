@@ -73,6 +73,26 @@ Scenarios are triggered using Ansible tags that introduce a specific system fail
 | **OOM Kill** | `scenario4` | `ansible-playbook -i hosts.ini scenarios/04_systemd_oom_limit/scenario.yaml -K` | `chronyd` service constrained to 1MB memory, triggers OOM |
 | **Cascading Failure** | `scenario5` | `ansible-playbook -i hosts.ini scenarios/05_cascading_db_failure/scenario.yaml -K` | MariaDB disk full + broken log directory ownership |
 
+## Running Scenarios with Goose
+
+The [run_scenario.sh](run_scenario.sh) script automates the execution of troubleshooting scenarios using Goose CLI assistant. It handles scenario selection and evaluation against rubrics.
+
+### Prerequisites
+- **GEMINI_API_KEY** environment variable set 
+
+### Usage
+```bash
+./run_scenario.sh <scenario-number> <vm-ip-address>
+```
+
+
+This will:
+1. Start a Goose session with a scenario-specific prompt
+2. Create a unique session name
+3. Optionally export the chat session to JSON
+4. Optionally evaluate the session against the scenario's rubric using rubric-kit
+
+
 ## Evaluation with Rubric-Kit
 
 This project integrates with [rubric-kit](https://github.com/narmaku/rubric-kit) to create evaluation rubrics for evaluating mcp server performance. Rubric-kit provides assessment of how AI agents handle these failure scenarios.
