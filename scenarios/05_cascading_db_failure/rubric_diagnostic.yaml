@@ -1,0 +1,96 @@
+dimensions:
+- first_diagnosis_accuracy: First root cause (disk space issue) correctly identified.
+  grading_type: score
+  scores:
+    0: Failed to identify the disk space problem.
+    1: Identified disk space but didn't locate the specific file.
+    2: Identified disk space and located DISK_HOG file but missed details.
+    3: Correctly identified disk full, located DISK_HOG in /var/lib/mysql as cause.
+- second_diagnosis_accuracy: Second root cause (permission issue) correctly identified
+    after addressing the first.
+  grading_type: score
+  scores:
+    0: Failed to identify the permission issue.
+    1: Identified there's still a problem but didn't pinpoint permissions.
+    2: Identified permission issue but didn't specify exact directory/owner.
+    3: Correctly identified permission denied on /var/log/mariadb needing mysql:mysql
+      ownership.
+- sequential_troubleshooting: Logical sequential approach followed to diagnose and
+    resolve both cascading issues.
+  grading_type: score
+  scores:
+    0: No logical approach or completely random investigation.
+    1: Attempted investigation but missed sequential nature of problems.
+    2: Recognized multiple issues but didn't clearly sequence resolution steps.
+    3: Clearly followed sequential approach - diagnose issue 1, fix it, diagnose issue
+      2, fix it.
+- solution_correctness: Both proposed solutions would resolve the cascading failures.
+  grading_type: score
+  scores:
+    0: Solutions would not fix the problems.
+    1: One solution correct but the other incorrect or missing.
+    2: Both solutions generally correct but missing important details.
+    3: Both solutions completely correct and would fully resolve both issues.
+- solution_completeness: All necessary remediation steps for both issues included.
+  grading_type: binary
+- clarity_and_guidance: Readability, organization, and helpfulness of response.
+  grading_type: score
+  scores:
+    0: Unintelligible or no response.
+    1: Poorly organized or difficult to understand.
+    2: Generally clear but could be improved.
+    3: Exceptionally clear, well-organized, with actionable guidance for both issues.
+criteria:
+  identified_disk_space_issue:
+    category: Diagnosis - Issue 1
+    weight: 4
+    dimension: first_diagnosis_accuracy
+    criterion: Identifies "No space left on device" error (Errcode 28) as first blocker
+      preventing mariadb from starting.
+  identified_disk_hog_file:
+    category: Diagnosis - Issue 1
+    weight: 4
+    dimension: first_diagnosis_accuracy
+    criterion: Identifies DISK_HOG in /var/lib/mysql as large file causing disk space
+      issue.
+  identified_permission_issue:
+    category: Diagnosis - Issue 2
+    weight: 4
+    dimension: second_diagnosis_accuracy
+    criterion: Identifies "Permission denied" error (errno 13) on /var/log/mariadb/mariadb.log
+      as second blocker.
+  identified_incorrect_ownership:
+    category: Diagnosis - Issue 2
+    weight: 4
+    dimension: second_diagnosis_accuracy
+    criterion: Identifies /var/log/mariadb has incorrect ownership (root:root instead
+      of mysql:mysql).
+  sequential_problem_solving:
+    category: Approach
+    weight: 5
+    dimension: sequential_troubleshooting
+    criterion: Demonstrates sequential troubleshooting - investigate first issue, propose
+      fix, then investigate why service still fails after addressing disk space.
+  correct_disk_remediation:
+    category: Remediation - Issue 1
+    weight: 3
+    dimension: solution_correctness
+    criterion: Solution correctly addresses disk space by removing DISK_HOG from /var/lib/mysql.
+  correct_permission_remediation:
+    category: Remediation - Issue 2
+    weight: 3
+    dimension: solution_correctness
+    criterion: Solution correctly addresses permission by changing ownership of /var/log/mariadb
+      to mysql:mysql.
+  complete_resolution_steps:
+    category: Completeness
+    weight: 3
+    dimension: solution_completeness
+    criterion: Solution includes all steps - remove DISK_HOG, fix ownership, restart
+      service.
+  clear_guidance:
+    category: Communication
+    weight: 2
+    dimension: clarity_and_guidance
+    criterion: Provides clear, actionable guidance for resolving both cascading issues
+      in correct order.

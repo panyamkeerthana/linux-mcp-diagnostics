@@ -1,0 +1,99 @@
+dimensions:
+- diagnosis_accuracy: Root cause of SSH authentication failure correctly identified.
+  grading_type: score
+  scores:
+    0: Failed to identify the problem or completely incorrect diagnosis.
+    1: Partially identified but missed the permission/ownership root cause.
+    2: Identified permissions but didn't fully explain specific directory or file problems.
+    3: Correctly identified incorrect permissions/ownership on /home/testuser/.ssh
+      and/or authorized_keys as root cause.
+- problem_identification: Effectiveness of investigation and evidence gathering.
+  grading_type: score
+  scores:
+    0: Failed to gather relevant diagnostic information.
+    1: Gathered some information but missed critical evidence.
+    2: Gathered most relevant information with minor gaps.
+    3: Comprehensively gathered all relevant diagnostic evidence.
+- solution_correctness: Proposed solutions would resolve the SSH authentication problem.
+  grading_type: score
+  scores:
+    0: Solutions would not fix the problem or cause additional issues.
+    1: Partially correct but incomplete or only partially resolves the issue.
+    2: Would work but missing important details or best practices.
+    3: Completely correct and would fully resolve the issue.
+- solution_completeness: Solutions include all necessary steps for implementation.
+  grading_type: binary
+- factual_accuracy: All information provided is factually correct.
+  grading_type: binary
+- clarity_and_organization: Readability, structure, and presentation quality.
+  grading_type: score
+  scores:
+    0: Unintelligible or completely unorganized.
+    1: Difficult to understand or poorly structured.
+    2: Generally clear and organized but could be improved.
+    3: Exceptionally clear, well-structured, and easy to follow.
+criteria:
+  root_cause_identification:
+    category: Diagnosis
+    weight: 5
+    dimension: diagnosis_accuracy
+    criterion: Identifies incorrect permissions/ownership on /home/testuser/.ssh
+      and/or /home/testuser/.ssh/authorized_keys as root cause of SSH authentication failure.
+  log_evidence_gathering:
+    category: Investigation
+    weight: 3
+    dimension: problem_identification
+    criterion: Gathers relevant log evidence (from SSH/system logs) demonstrating
+      the permission/ownership issue.
+  logical_troubleshooting_approach:
+    category: Reasoning
+    weight: 3
+    dimension: clarity_and_organization
+    criterion: Follows logical troubleshooting approach (checking logs, examining
+      permissions, verifying ownership) methodically.
+  factual_accuracy_log_message:
+    category: Accuracy
+    weight: 2
+    dimension: factual_accuracy
+    criterion: Correctly references the log message indicating bad ownership or modes
+      for directory /home/testuser/.ssh.
+  factual_accuracy_problem_directory:
+    category: Accuracy
+    weight: 2
+    dimension: factual_accuracy
+    criterion: Correctly identifies '/home/testuser/.ssh' as the problematic directory.
+  explanation_of_permission_strictness:
+    category: Reasoning
+    weight: 2
+    dimension: clarity_and_organization
+    criterion: Explains why SSH is strict about permissions.
+  effective_problem_solving:
+    category: Problem Solving
+    weight: 2
+    dimension: solution_correctness
+    criterion: Demonstrates effective problem-solving by adapting to obstacles (e.g.,
+      permission denied errors) and finding alternative approaches.
+  correct_ownership_remediation:
+    category: Remediation
+    weight: 4
+    dimension: solution_correctness
+    criterion: Solution correctly addresses ownership on /home/testuser/.ssh (e.g.,
+      setting to testuser:testuser).
+  correct_directory_permissions_remediation:
+    category: Remediation
+    weight: 4
+    dimension: solution_correctness
+    criterion: Solution correctly addresses .ssh directory permissions (e.g., setting
+      to 700).
+  correct_key_permissions_remediation:
+    category: Remediation
+    weight: 4
+    dimension: solution_correctness
+    criterion: Solution correctly addresses authorized_keys file permissions (e.g.,
+      setting to 600).
+  solution_completeness:
+    category: Remediation
+    weight: 3
+    dimension: solution_completeness
+    criterion: Solution includes all necessary steps (ownership and permissions for
+      both directory and authorized_keys file).

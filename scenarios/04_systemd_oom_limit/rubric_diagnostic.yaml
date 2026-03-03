@@ -1,0 +1,82 @@
+dimensions:
+- diagnosis_accuracy: Root cause of service failure correctly identified.
+  grading_type: score
+  scores:
+    0: Failed to identify the problem or completely incorrect diagnosis.
+    1: Partially identified but missed the OOM/memory limit root cause.
+    2: Identified memory/OOM but didn't fully explain the systemd limit configuration.
+    3: Correctly identified OOM kill due to systemd memory limit and located drop-in
+      file.
+- investigation_process: Effectiveness of troubleshooting approach.
+  grading_type: score
+  scores:
+    0: Failed to gather relevant diagnostic information.
+    1: Gathered some information but missed critical evidence.
+    2: Gathered most relevant information with minor gaps.
+    3: Comprehensively investigated logs, service status, and configuration files.
+- solution_correctness: Proposed solution would resolve the OOM issue.
+  grading_type: score
+  scores:
+    0: Solution would not fix the problem or cause additional issues.
+    1: Partially correct but incomplete.
+    2: Would work but missing important details or verification steps.
+    3: Completely correct and would fully resolve the issue.
+- solution_completeness: All necessary remediation steps included.
+  grading_type: binary
+- factual_accuracy: All information provided is factually correct.
+  grading_type: binary
+- clarity_and_organization: Readability and structure of response.
+  grading_type: score
+  scores:
+    0: Unintelligible or completely unorganized.
+    1: Difficult to understand or poorly structured.
+    2: Generally clear and organized but could be improved.
+    3: Exceptionally clear, well-structured, and easy to follow.
+criteria:
+  root_cause_identification:
+    category: Diagnosis
+    weight: 5
+    dimension: diagnosis_accuracy
+    criterion: Identifies chronyd is killed by OOM killer due to systemd memory limit
+      (MemoryMax).
+  configuration_file_identification:
+    category: Diagnosis
+    weight: 4
+    dimension: diagnosis_accuracy
+    criterion: Identifies drop-in configuration file (50-MemoryMax.conf in /etc/systemd/system/chronyd.service.d/)
+      enforcing the memory limit.
+  log_evidence_gathering:
+    category: Investigation
+    weight: 3
+    dimension: investigation_process
+    criterion: Gathers relevant log evidence showing OOM kill or memory-related failures.
+  logical_troubleshooting_approach:
+    category: Investigation
+    weight: 3
+    dimension: investigation_process
+    criterion: Follows logical troubleshooting approach (checking service status, examining
+      OOM logs, inspecting systemd configuration).
+  correct_remediation_approach:
+    category: Remediation
+    weight: 5
+    dimension: solution_correctness
+    criterion: Solution correctly removes or increases memory limit using systemctl
+      revert or editing/removing drop-in file.
+  complete_remediation_steps:
+    category: Remediation
+    weight: 3
+    dimension: solution_completeness
+    criterion: Solution includes removing/reverting limit, reloading systemd, restarting
+      service, and verifying functionality.
+  factual_accuracy_memory_limit:
+    category: Accuracy
+    weight: 2
+    dimension: factual_accuracy
+    criterion: Correctly interprets MemoryMax value (1048576 = 1 MB) and explains
+      why it causes OOM.
+  explanation_clarity:
+    category: Communication
+    weight: 2
+    dimension: clarity_and_organization
+    criterion: Clearly explains OOM issue, systemd resource limit mechanism, and service
+      failure cause.

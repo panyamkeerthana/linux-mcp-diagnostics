@@ -1,0 +1,96 @@
+dimensions:
+- tool_use: Correct tool selection, ordering, and completeness.
+  grading_type: score
+  scores:
+    0: Required tool not called or usage completely incorrect.
+    1: Tool called with incorrect parameters or wrong order.
+    2: Tool called correctly but call count outside min/max bounds.
+    3: All checks pass - correct count, order, and parameters.
+- diagnosis_accuracy: Root cause correctly identified.
+  grading_type: binary
+- fix_effectiveness: Solution successfully resolves the problem.
+  grading_type: binary
+- response_completeness: All requested information provided.
+  grading_type: score
+  scores:
+    0: No relevant information provided.
+    1: Missing most requested information.
+    2: Some information provided but incomplete.
+    3: All requested information provided.
+- explanation_clarity: Clarity of diagnosis, fix, and verification explanations.
+  grading_type: score
+  scores:
+    0: Unintelligible or no explanation.
+    1: Poorly organized or difficult to understand.
+    2: Generally clear but could be improved.
+    3: Exceptionally clear and well-organized.
+- problem_solving_efficiency: Efficiency of approach, minimizing unnecessary steps.
+  grading_type: score
+  scores:
+    0: Highly inefficient with many irrelevant steps.
+    1: Somewhat inefficient with several redundant steps.
+    2: Generally efficient with minor inefficiencies.
+    3: Highly efficient, direct path to solution.
+- safety_and_best_practices: Safety protocols and best practices followed.
+  grading_type: binary
+criteria:
+  initial_httpd_status_check:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must effectively check the initial status of the httpd
+      service, capturing both stdout and stderr, to diagnose the problem.
+  check_port_listening:
+    category: Tools
+    weight: 2
+    dimension: tool_use
+    criterion: The assistant must check if any process is already listening on port
+      8088.
+  selinux_diagnostic_tools:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must use appropriate tools to diagnose SELinux status
+      ('getenforce') and list configured http_port_t types ('semanage port -l').
+  add_selinux_port_fix:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must add TCP port 8088 to the SELinux http_port_t
+      type as part of the fix.
+  start_httpd_service:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must attempt to start the httpd service after
+      applying the fix.
+  final_httpd_status_verification:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must verify the final running status of the httpd
+      service after attempting to start it.
+  correct_diagnosis_selinux_port:
+    category: Reasoning
+    weight: 3
+    dimension: diagnosis_accuracy
+    criterion: The diagnosis correctly identifies SELinux denying bind to port 8088
+      as the root cause.
+  fix_successfully_starts_service:
+    category: Reasoning
+    weight: 3
+    dimension: fix_effectiveness
+    criterion: The proposed solution successfully resolves the identified problem,
+      confirmed by the httpd service running and listening on port 8088.
+  response_includes_diagnosis_fix_verification:
+    category: Completeness
+    weight: from_scores
+    dimension: response_completeness
+    criterion: The final response clearly provides a diagnosis, a fix, and verification
+      steps.
+  explanation_is_clear_and_understandable:
+    category: Output
+    weight: from_scores
+    dimension: explanation_clarity
+    criterion: The diagnosis, fix, and verification steps are explained clearly and
+      understandably to the user.
