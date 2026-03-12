@@ -33,6 +33,8 @@ dimensions:
     3: Highly efficient, direct path to solution.
 - safety_and_best_practices: Safety protocols and best practices followed.
   grading_type: binary
+- task_autonomy: Task completed without requiring additional user intervention
+  grading_type: binary
 criteria:
   initial_httpd_status_check:
     category: Tools
@@ -94,3 +96,9 @@ criteria:
     dimension: explanation_clarity
     criterion: The diagnosis, fix, and verification steps are explained clearly and
       understandably to the user.
+  completes_task_without_intervention:
+    category: Autonomy
+    weight: 3
+    dimension: task_autonomy
+    criterion: The assistant autonomously performs diagnosis, applies fixes, and verifies the solution without requiring additional user prompts to
+      proceed.
