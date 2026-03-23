@@ -3,7 +3,7 @@
 
 ---
 - name: "Scenario 1: SELinux Port Denial"
-  hosts: linux_vm
+  hosts: all
   become: yes
   tasks:
 
