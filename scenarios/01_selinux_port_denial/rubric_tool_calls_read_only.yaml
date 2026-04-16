@@ -1,0 +1,161 @@
+variables:
+  host_ip: "<ip>"
+  httpd_conf_path: /etc/httpd/conf/httpd.conf
+  httpd_error_port: '8088'
+  selinux_config_path: /etc/selinux/config
+  selinux_mode: enforcing
+  semanage_path_sbin: /usr/sbin/semanage
+  audit2allow_path_bin: /usr/bin/audit2allow
+  service_name_httpd: httpd
+  package_name_selinux_tools: policycoreutils-python-utils
+
+dimensions:
+- tool_use_effectiveness:
+    description: Correct tool selection, usage, and output interpretation.
+    grading_type: score
+    scores:
+      0: Required tool not called at all or completely incorrect tool usage.
+      1: Tool called but with incorrect parameters or wrong order (if order is critical).
+      2: Tool called with correct order and parameters, but call count outside min/max bounds.
+      3: All applicable checks pass - tool called with correct count, order, and parameters.
+- problem_diagnosis_accuracy:
+    description: Underlying cause correctly identified.
+    grading_type: binary
+- solution_relevance_and_correctness:
+    description: Solutions technically accurate, safe, and address problem.
+    grading_type: binary
+- response_completeness:
+    description: All requested information provided.
+    grading_type: score
+    scores:
+      0: No relevant information provided.
+      1: Missing most requested information or critical details.
+      2: Some information provided but incomplete or minor details missing.
+      3: All requested information comprehensively provided.
+- response_clarity:
+    description: Clear, well-structured explanations.
+    grading_type: score
+    scores:
+      0: Response has no structure or organization.
+      1: Response missing critical sections (diagnosis or solution).
+      2: All sections present but not clearly separated with headers.
+      3: Clear sections with proper formatting separating diagnosis and solution.
+- diagnostic_path_efficiency:
+    description: Logical and minimal steps to diagnosis.
+    grading_type: score
+    scores:
+      0: No logical diagnostic plan followed.
+      1: Skips key diagnostic steps or jumps to conclusions.
+      2: Logical approach but includes some redundant or inefficient steps.
+      3: Demonstrates minimal redundancy with efficient diagnostic path.
+
+criteria:
+  initial_httpd_status_check:
+    category: Tools
+    weight: 3
+    dimension: tool_use_effectiveness
+    criterion: Correctly called get_service_status for {{service_name_httpd}} on {{host_ip}}.
+    tool_calls:
+      respect_order: false
+      required:
+      - linuxmcpserver__get_service_status:
+          min_calls: 1
+          params:
+            host: '{{host_ip}}'
+            service_name: '{{service_name_httpd}}'
+  httpd_journal_logs_retrieved:
+    category: Tools
+    weight: 3
+    dimension: tool_use_effectiveness
+    criterion: Correctly retrieved journal logs for {{service_name_httpd}}.
+    tool_calls:
+      respect_order: false
+      required:
+      - linuxmcpserver__get_journal_logs:
+          min_calls: 1
+          params:
+            host: '{{host_ip}}'
+            unit: '{{service_name_httpd}}'
+  httpd_config_read:
+    category: Tools
+    weight: 3
+    dimension: tool_use_effectiveness
+    criterion: Correctly read Apache config at {{httpd_conf_path}} to identify listening port.
+    tool_calls:
+      respect_order: false
+      required:
+      - linuxmcpserver__read_file:
+          min_calls: 1
+          params:
+            host: '{{host_ip}}'
+            path: '{{httpd_conf_path}}'
+  selinux_config_read:
+    category: Tools
+    weight: 3
+    dimension: tool_use_effectiveness
+    criterion: Correctly read SELinux config at {{selinux_config_path}}.
+    tool_calls:
+      respect_order: false
+      required:
+      - linuxmcpserver__read_file:
+          min_calls: 1
+          params:
+            host: '{{host_ip}}'
+            path: '{{selinux_config_path}}'
+  additional_diagnostic_tools:
+    category: Tools
+    weight: 1
+    dimension: tool_use_effectiveness
+    criterion: Used additional diagnostic tools (listening ports, SELinux binary checks).
+    tool_calls:
+      respect_order: false
+      optional:
+      - linuxmcpserver__get_listening_ports:
+          min_calls: 1
+          params:
+            host: '{{host_ip}}'
+      - linuxmcpserver__list_files:
+          min_calls: 1
+          params:
+            host: '{{host_ip}}'
+            path: '{{semanage_path_sbin}}'
+      - linuxmcpserver__list_files:
+          min_calls: 1
+          params:
+            host: '{{host_ip}}'
+            path: '{{audit2allow_path_bin}}'
+  diagnosis_identifies_port_binding_error:
+    category: Accuracy
+    weight: 3
+    dimension: problem_diagnosis_accuracy
+    criterion: Correctly identifies "Permission denied - could not bind to [::]:{{httpd_error_port}}" as core issue.
+  diagnosis_attributes_to_selinux:
+    category: Accuracy
+    weight: 3
+    dimension: problem_diagnosis_accuracy
+    criterion: Correctly attributes port binding error to SELinux policy ({{selinux_mode}}).
+  solution_port_change_correct:
+    category: Accuracy
+    weight: 3
+    dimension: solution_relevance_and_correctness
+    criterion: First solution (change Apache port to 80) is correct and relevant.
+  solution_selinux_config_correct:
+    category: Accuracy
+    weight: 3
+    dimension: solution_relevance_and_correctness
+    criterion: Second solution (configure SELinux for {{httpd_error_port}}) includes installing {{package_name_selinux_tools}}.
+  response_addresses_all_parts:
+    category: Completeness
+    weight: from_scores
+    dimension: response_completeness
+    criterion: Response includes diagnosis and suggested fixes.
+  response_clarity_and_structure:
+    category: Output
+    weight: from_scores
+    dimension: response_clarity
+    criterion: Explanation and suggestions are clear and well-structured.
+  diagnostic_path_logical:
+    category: Reasoning
+    weight: from_scores
+    dimension: diagnostic_path_efficiency
+    criterion: Tool calls demonstrate logical and efficient diagnostic path.

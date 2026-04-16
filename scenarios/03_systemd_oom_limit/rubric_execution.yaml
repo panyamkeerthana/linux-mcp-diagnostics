@@ -1,0 +1,92 @@
+variables:
+  service_name: chronyd
+  memory_limit_bytes: 1048576
+  dropin_file: /etc/systemd/system.control/chronyd.service.d/50-MemoryMax.conf
+
+dimensions:
+- tool_use:
+    description: Correct tool selection, ordering, and parameterization.
+    grading_type: score
+    scores:
+      0: Required tool not called.
+      1: Tool called with incorrect parameters or wrong order.
+      2: Tool called correctly but call count outside min/max bounds.
+      3: All checks pass - correct count, order, and parameters.
+- problem_diagnosis:
+    description: Root cause accurately diagnosed from available information.
+    grading_type: binary
+- solution_appropriateness:
+    description: Solution is relevant, effective, and safe.
+    grading_type: binary
+- output_completeness:
+    description: All necessary information, steps, or actions provided.
+    grading_type: score
+    scores:
+      0: No relevant information or steps provided.
+      1: Missing most requested information or critical steps.
+      2: Some information or steps provided but incomplete.
+      3: All necessary information and steps provided.
+- clarity_and_coherence:
+    description: Readability, organization, and logical flow.
+    grading_type: score
+    scores:
+      0: No explanation or completely incomprehensible response.
+      1: Actions taken but no explanation of reasoning or findings.
+      2: Explanation provided but lacks logical flow (fix mentioned before diagnosis complete).
+      3: Logical flow maintained (diagnosis findings, then fix rationale, then verification results).
+- adherence_to_protocol:
+    description: Correctly followed interaction protocols (e.g., waiting
+      for approval).
+    grading_type: binary
+criteria:
+  initial_diagnosis_tool_call:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Diagnose {{service_name}} service by checking service status, memory limits, and systemd drop-in configuration files.
+  solution_application_tool_call:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Apply fix by removing memory limit drop-in file, reloading systemd daemon, and restarting service.
+  problem_diagnosis_correctly_identified_memory_limit:
+    category: Reasoning
+    weight: 3
+    dimension: problem_diagnosis
+    criterion: Identifies {{service_name}} service has MemoryMax limit of {{memory_limit_bytes}} causing OOM.
+  solution_appropriateness_remove_memory_max:
+    category: Reasoning
+    weight: 3
+    dimension: solution_appropriateness
+    criterion: Solution correctly targets removal of {{dropin_file}}.
+  solution_appropriateness_includes_daemon_reload:
+    category: Reasoning
+    weight: 2
+    dimension: solution_appropriateness
+    criterion: Solution includes systemctl daemon-reload for systemd to recognize
+      changes.
+  solution_appropriateness_includes_service_restart:
+    category: Reasoning
+    weight: 2
+    dimension: solution_appropriateness
+    criterion: Solution includes restarting {{service_name}} service to apply new configuration.
+  output_completeness_includes_status_check:
+    category: Completeness
+    weight: 1
+    dimension: output_completeness
+    criterion: Solution includes checking {{service_name}} service status after fix.
+  adherence_to_protocol_waits_for_approval:
+    category: Output
+    weight: 3
+    dimension: adherence_to_protocol
+    criterion: Waits for user approval after proposing modifying action.
+  clarity_of_initial_tool_description:
+    category: Output
+    weight: 1
+    dimension: clarity_and_coherence
+    criterion: Initial tool description clearly states purpose (check for memory limits).
+  clarity_of_modify_tool_description:
+    category: Output
+    weight: 1
+    dimension: clarity_and_coherence
+    criterion: Modify tool description clearly explains the complete remediation workflow.

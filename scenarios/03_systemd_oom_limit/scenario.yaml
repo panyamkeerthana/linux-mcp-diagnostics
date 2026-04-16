@@ -2,7 +2,7 @@
 # Job for chronyd.service failed because of an out-of-memory (OOM) siutation.
 # Provide diagnosis and a fix for this.
 ---
-- name: "Scenario 4: OOM Kill via Systemd"
+- name: "Scenario 3: OOM Kill via Systemd"
   hosts: all
   become: yes
 

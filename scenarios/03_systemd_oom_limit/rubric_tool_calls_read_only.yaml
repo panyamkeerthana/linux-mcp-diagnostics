@@ -1,0 +1,142 @@
+variables:
+  daemon_reload_command_full: sudo systemctl daemon-reload
+  drop_in_config_path: /etc/systemd/system.control/chronyd.service.d/50-MemoryMax.conf
+  host_ip: "<ip>"
+  mem_peak_reported: 1M
+  memory_max_config_value: '1048576'
+  memory_max_reported_mb: 1 MB
+  oom_kill_result: oom-kill
+  restart_command_full: sudo systemctl restart chronyd
+  revert_command_full: sudo systemctl revert chronyd.service
+  service_name: chronyd
+  status_command_full: systemctl status chronyd
+
+dimensions:
+- tool_use:
+    description: Correct tool selection, order, and parameters.
+    grading_type: score
+    scores:
+      0: Required tool not called at all or completely incorrect tool usage.
+      1: Tool called but with incorrect parameters or wrong order (if order is critical).
+      2: Tool called with correct order and parameters, but call count outside min/max bounds.
+      3: All applicable checks pass - tool called with correct count, order, and parameters.
+- factual_accuracy:
+    description: Facts and data values are correct.
+    grading_type: binary
+- problem_diagnosis_correctness:
+    description: Root cause accurately identified.
+    grading_type: binary
+- solution_effectiveness:
+    description: Solution appropriate and effective.
+    grading_type: score
+    scores:
+      0: Solution is completely incorrect, harmful, or irrelevant to the problem.
+      1: Solution is partially correct but contains significant flaws or will not fully resolve the issue.
+      2: Solution is mostly correct and likely resolves the issue, but has minor inaccuracies or missing steps.
+      3: Solution is fully correct, optimal, and directly resolves the identified problem.
+- completeness:
+    description: All necessary information provided.
+    grading_type: score
+    scores:
+      0: No relevant information provided.
+      1: Missing most requested information or critical steps required to address the problem.
+      2: Some information provided but incomplete or lacking crucial details for full resolution.
+      3: All requested information and necessary steps are comprehensively provided.
+- clarity_and_organization:
+    description: Response clear and well-structured.
+    grading_type: score
+    scores:
+      0: Response is completely unintelligible or extremely poorly structured.
+      1: Response is poorly organized or difficult to understand, containing significant ambiguity.
+      2: Response is generally clear and organized, but could be improved for better comprehension.
+      3: Response is exceptionally clear, well-structured, and easy to follow.
+criteria:
+  required_get_service_status_tool_call:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must call the `linux-mcp-server__get_service_status`
+      tool with the correct parameters to diagnose the issue.
+    tool_calls:
+      respect_order: true
+      required:
+      - linux-mcp-server__get_service_status:
+          min_calls: 1
+          params:
+            host: '{{host_ip}}'
+            service_name: '{{service_name}}'
+  required_read_file_tool_call:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must call the `linux-mcp-server__read_file` tool with
+      the correct parameters to inspect the identified drop-in configuration file.
+    tool_calls:
+      respect_order: true
+      required:
+      - linux-mcp-server__read_file:
+          min_calls: 1
+          params:
+            path: '{{drop_in_config_path}}'
+            host: '{{host_ip}}'
+  factual_accuracy_oom_kill_observed:
+    category: Accuracy
+    weight: 2
+    dimension: factual_accuracy
+    criterion: The assistant correctly states that the service failed with result
+      '{{oom_kill_result}}' due to the OOM killer.
+  factual_accuracy_drop_in_file_path:
+    category: Accuracy
+    weight: 2
+    dimension: factual_accuracy
+    criterion: The assistant correctly identifies '{{drop_in_config_path}}' as the
+      drop-in file enforcing the memory limit.
+  factual_accuracy_memory_max_limit:
+    category: Accuracy
+    weight: 2
+    dimension: factual_accuracy
+    criterion: The assistant correctly identifies the `MemoryMax` value from the configuration
+      file as '{{memory_max_config_value}}' and correctly interprets it as '{{memory_max_reported_mb}}'.
+  factual_accuracy_peak_memory_usage:
+    category: Accuracy
+    weight: 1
+    dimension: factual_accuracy
+    criterion: The assistant correctly states the service's peak memory usage was
+      '{{mem_peak_reported}}'.
+  problem_diagnosis_correct:
+    category: Reasoning
+    weight: 3
+    dimension: problem_diagnosis_correctness
+    criterion: The assistant accurately identifies the root cause of the chronyd service
+      crashing as an extremely strict `MemoryMax` limit.
+  solution_effectiveness_revert_command:
+    category: Output
+    weight: 3
+    dimension: solution_effectiveness
+    criterion: The proposed solution correctly includes using `{{revert_command_full}}`
+      to remove the custom memory limit configuration.
+  solution_effectiveness_daemon_reload:
+    category: Output
+    weight: 2
+    dimension: solution_effectiveness
+    criterion: The proposed solution correctly includes reloading the systemd manager
+      configuration using `{{daemon_reload_command_full}}` after modifying unit files.
+  solution_effectiveness_restart_service:
+    category: Output
+    weight: 2
+    dimension: solution_effectiveness
+    criterion: The proposed solution correctly includes restarting the service using
+      `{{restart_command_full}}` to apply the changes.
+  completeness_verification_step:
+    category: Completeness
+    weight: 1
+    dimension: completeness
+    criterion: The response includes a clear step to verify the service status after
+      applying the fix, using `{{status_command_full}}`.
+  clarity_and_organization_overall:
+    category: Output
+    weight: from_scores
+    dimension: clarity_and_organization
+    criterion: The assistant's explanation, diagnosis, and solution steps are presented
+      clearly and are well-organized with appropriate formatting (e.g., headings,
+      code blocks).

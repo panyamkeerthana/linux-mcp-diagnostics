@@ -1,74 +1,90 @@
+variables:
+  username: testuser
+  home_dir: /home/testuser
+  ssh_dir: /home/testuser/.ssh
+  authorized_keys_file: /home/testuser/.ssh/authorized_keys
+  ssh_config: /etc/ssh/sshd_config
+  ssh_dir_permissions: "700"
+  authorized_keys_permissions: "600"
+  correct_ownership: "testuser:testuser"
+
 dimensions:
-- tool_use: Correct tool selection, parameters, and sequencing.
-  grading_type: score
-  scores:
-    0: Required tool not called or incorrect tool selected.
-    1: Tool called with incorrect parameters or wrong order.
-    2: Tool called correctly but call count outside expected bounds.
-    3: All checks pass - correct count, order, and parameters.
-- problem_diagnosis_accuracy: Root cause correctly identified from gathered information.
-  grading_type: binary
-- solution_appropriateness: Solution is technically sound, safe, and addresses the
-    problem.
-  grading_type: binary
-- workflow_management: Task flow effectively managed (planning, executing, tracking
-    progress).
-  grading_type: score
-  scores:
-    0: No discernible plan or completely failed logical steps.
-    1: Plan executed poorly with significant deviations or inefficiencies.
-    2: Reasonable plan with minor inefficiencies or tracking inaccuracies.
-    3: Clear, logical, efficient workflow with accurate progress tracking.
-- communication_clarity: Clarity of actions, findings, and requests to user.
-  grading_type: score
-  scores:
-    0: Unintelligible or no response.
-    1: Poorly organized or difficult to understand.
-    2: Generally clear but could be improved.
-    3: Exceptionally clear and well-organized.
-- task_completeness: All aspects of user's request fully addressed.
-  grading_type: score
-  scores:
-    0: No relevant progress made.
-    1: Only initial steps taken, most task unaddressed.
-    2: Significant progress but didn't fully complete or verify solution.
-    3: Fully completed with verification, or remaining steps clearly outlined.
+- tool_use:
+    description: Correct tool selection, parameters, and sequencing.
+    grading_type: score
+    scores:
+      0: Required tool not called or incorrect tool selected.
+      1: Tool called with incorrect parameters or wrong order.
+      2: Tool called correctly but call count outside expected bounds.
+      3: All checks pass - correct count, order, and parameters.
+- problem_diagnosis_accuracy:
+    description: Root cause correctly identified from gathered information.
+    grading_type: binary
+- solution_appropriateness:
+    description: Solution is technically sound, safe, and addresses the
+      problem.
+    grading_type: binary
+- workflow_management:
+    description: Task flow effectively managed (planning, executing, tracking
+      progress).
+    grading_type: score
+    scores:
+      0: No plan stated; jumps directly to commands without investigation.
+      1: Plan stated but skips diagnosis step (applies fixes without gathering evidence first).
+      2: Follows sequence (diagnose, fix, verify) but includes redundant or unnecessary tool calls.
+      3: Follows sequence (diagnose, fix, verify) with minimal redundant steps.
+- communication_clarity:
+    description: Clarity of actions, findings, and requests to user.
+    grading_type: score
+    scores:
+      0: No explanation of actions or findings provided.
+      1: Actions stated but findings not explained (e.g., shows commands but not what they revealed).
+      2: Actions and findings explained but not clearly separated or structured.
+      3: Actions and findings clearly structured with explanations of what each step revealed.
+- task_completeness:
+    description: All aspects of user's request fully addressed.
+    grading_type: score
+    scores:
+      0: No relevant progress made.
+      1: Only initial steps taken, most task unaddressed.
+      2: Significant progress but didn't fully complete or verify solution.
+      3: Fully completed with verification, or remaining steps clearly outlined.
 criteria:
   ssh_config_examination_tool_call:
     category: Tools
     weight: 3
     dimension: tool_use
-    criterion: Examine SSH daemon configuration file /etc/ssh/sshd_config.
+    criterion: Examine SSH daemon configuration file {{ssh_config}}.
   initial_permissions_diagnostic_tool_call:
     category: Tools
     weight: 3
     dimension: tool_use
-    criterion: Check initial permissions and ownership of /home/testuser, /home/testuser/.ssh,
+    criterion: Check initial permissions and ownership of {{home_dir}}, {{ssh_dir}},
       and authorized_keys.
   accurate_initial_ssh_dir_permissions_identification:
     category: Accuracy
     weight: 2
     dimension: problem_diagnosis_accuracy
-    criterion: Correctly identifies initial permissions of /home/testuser/.ssh as
+    criterion: Correctly identifies initial permissions of {{ssh_dir}} as
       'drwxrwxrwx. 2 root root'.
   accurate_initial_authorized_keys_permissions_identification:
     category: Accuracy
     weight: 2
     dimension: problem_diagnosis_accuracy
     criterion: Correctly identifies initial permissions of authorized_keys as '-rw-r--r--.
-      1 testuser root'.
+      1 {{username}} root'.
   correct_problem_diagnosis:
     category: Reasoning
     weight: 3
     dimension: problem_diagnosis_accuracy
-    criterion: Diagnoses root cause as incorrect permissions/ownership on /home/testuser/.ssh
+    criterion: Diagnoses root cause as incorrect permissions/ownership on {{ssh_dir}}
       and authorized_keys.
   appropriate_fix_application_tool_call:
     category: Tools
     weight: 3
     dimension: tool_use
-    criterion: Apply chown/chmod commands to fix .ssh (700) and authorized_keys (600,
-      testuser:testuser).
+    criterion: Apply chown/chmod commands to fix .ssh ({{ssh_dir_permissions}}) and authorized_keys ({{authorized_keys_permissions}},
+      {{correct_ownership}}).
   post_fix_permissions_verification_tool_call:
     category: Tools
     weight: 3
@@ -78,14 +94,13 @@ criteria:
     category: Accuracy
     weight: 2
     dimension: task_completeness
-    criterion: Verifies .ssh permissions correctly set to 'drwx------. 2 testuser
-      testuser'.
+    criterion: Verifies .ssh permissions correctly set to 'drwx------. 2 {{correct_ownership}}'.
   accurate_post_fix_authorized_keys_permissions_verification:
     category: Accuracy
     weight: 2
     dimension: task_completeness
     criterion: Verifies authorized_keys permissions correctly set to '-rw-------. 1
-      testuser testuser'.
+      {{correct_ownership}}'.
   clear_final_user_instructions:
     category: Output
     weight: 2

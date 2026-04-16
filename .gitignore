@@ -3,3 +3,4 @@ hosts.ini
 scenario*.json
 s*.txt
 .env
+result*.yaml

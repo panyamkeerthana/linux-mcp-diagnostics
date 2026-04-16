@@ -1,0 +1,190 @@
+variables:
+  authorized_keys_path: /home/testuser/.ssh/authorized_keys
+  etc_group_path: /etc/group
+  etc_passwd_path: /etc/passwd
+  home_dir_path: /home
+  log_error_message: 'Authentication refused: bad ownership or modes for directory
+    /home/testuser/.ssh'
+  log_messages_path: /var/log/messages
+  log_secure_path: /var/log/secure
+  ssh_dir_path: /home/testuser/.ssh
+  sshd_config_path: /etc/ssh/sshd_config
+  target_ip: "<ip>"
+  target_user: testuser
+
+dimensions:
+- tool_use_effectiveness:
+    description: Correct tool selection, usage, and output interpretation.
+    grading_type: score
+    scores:
+      0: Required tool not called at all or completely incorrect tool usage.
+      1: Tool called but with incorrect parameters or wrong order (if order is critical).
+      2: Tool called with correct order and parameters, but call count outside min/max bounds.
+      3: All applicable checks pass - tool called with correct count, order, and parameters.
+- problem_identification_accuracy:
+    description: Root cause correctly identified.
+    grading_type: binary
+- solution_correctness:
+    description: Solutions technically correct and appropriate.
+    grading_type: binary
+- output_completeness:
+    description: All requested information provided.
+    grading_type: score
+    scores:
+      0: No relevant information provided.
+      1: Missing most requested information or critical details for the solution.
+      2: Some information provided but incomplete, or minor details are missing.
+      3: All requested information comprehensively provided and solution is fully detailed.
+- output_clarity_and_organization:
+    description: Response well-structured and clear.
+    grading_type: score
+    scores:
+      0: Response is completely unintelligible or has no coherent structure.
+      1: Response is poorly organized or difficult to understand, requiring significant effort.
+      2: Response is generally clear but could be improved in structure or conciseness.
+      3: Response is exceptionally clear, well-organized, and easy to follow.
+criteria:
+  effective_journal_log_retrieval:
+    category: Tools
+    weight: 3
+    dimension: tool_use_effectiveness
+    criterion: The assistant must successfully use `linux-mcp-server__get_journal_logs`
+      to retrieve SSHD logs that contain the critical error message.
+    tool_calls:
+      respect_order: false
+      required:
+      - linux-mcp-server__get_journal_logs:
+          min_calls: 1
+          params:
+            unit: sshd
+            host: '{{target_ip}}'
+  permission_related_info_gathering:
+    category: Tools
+    weight: 2
+    dimension: tool_use_effectiveness
+    criterion: The assistant must perform relevant file/directory listing or reading
+      to investigate permissions, such as listing `/home` or reading `/etc/passwd`.
+    tool_calls:
+      respect_order: false
+      required:
+      - linux-mcp-server__list_directories:
+          min_calls: 1
+          params:
+            path: '{{home_dir_path}}'
+            host: '{{target_ip}}'
+      - linux-mcp-server__read_file:
+          min_calls: 1
+          params:
+            path: '{{etc_passwd_path}}'
+            host: '{{target_ip}}'
+  comprehensive_diagnostic_attempts:
+    category: Tools
+    weight: 1
+    dimension: tool_use_effectiveness
+    criterion: The assistant should attempt a variety of diagnostic tools beyond the
+      immediate requirements, demonstrating a thorough approach.
+    tool_calls:
+      respect_order: false
+      optional:
+      - linux-mcp-server__read_log_file:
+          min_calls: 1
+          params:
+            log_path: '{{log_secure_path}}'
+            host: '{{target_ip}}'
+      - linux-mcp-server__list_files:
+          min_calls: 1
+          params:
+            path: '{{home_dir_path}}'
+            host: '{{target_ip}}'
+      - linux-mcp-server__list_files:
+          min_calls: 1
+          params:
+            path: '{{ssh_dir_path}}'
+            host: '{{target_ip}}'
+      - linux-mcp-server__list_directories:
+          min_calls: 1
+          params:
+            path: '{{ssh_dir_path}}'
+            host: '{{target_ip}}'
+      - linux-mcp-server__read_file:
+          min_calls: 1
+          params:
+            path: '{{sshd_config_path}}'
+            host: '{{target_ip}}'
+      - linux-mcp-server__get_system_information:
+          min_calls: 1
+          params:
+            host: '{{target_ip}}'
+      - linux-mcp-server__get_audit_logs:
+          min_calls: 1
+          params:
+            host: '{{target_ip}}'
+      - linux-mcp-server__get_journal_logs:
+          min_calls: 1
+          params:
+            unit: sshd
+            priority: warning
+            host: '{{target_ip}}'
+      - linux-mcp-server__get_journal_logs:
+          min_calls: 1
+          params:
+            unit: sshd
+            priority: err
+            host: '{{target_ip}}'
+      - linux-mcp-server__list_files:
+          min_calls: 1
+          params:
+            path: '{{home_dir_path}}/kpanyam'
+            host: '{{target_ip}}'
+      - linux-mcp-server__read_file:
+          min_calls: 1
+          params:
+            path: '{{log_messages_path}}'
+            host: '{{target_ip}}'
+      - linux-mcp-server__get_disk_usage:
+          min_calls: 1
+          params:
+            host: '{{target_ip}}'
+      - linux-mcp-server__read_file:
+          min_calls: 1
+          params:
+            path: '{{etc_group_path}}'
+            host: '{{target_ip}}'
+      prohibited: []
+  problem_identified_correctly:
+    category: Reasoning
+    weight: 3
+    dimension: problem_identification_accuracy
+    criterion: The assistant correctly identified 'bad ownership or modes for directory
+      /home/testuser/.ssh' as the root cause of the SSH failure.
+  solution_chown_correct:
+    category: Output
+    weight: 3
+    dimension: solution_correctness
+    criterion: 'The recommended `chown` command is correct for setting the proper
+      ownership of the .ssh directory: `sudo chown -R {{target_user}}:{{target_user}}
+      {{ssh_dir_path}}`.'
+  solution_chmod_dir_correct:
+    category: Output
+    weight: 3
+    dimension: solution_correctness
+    criterion: 'The recommended `chmod` command for the .ssh directory is correct:
+      `sudo chmod 700 {{ssh_dir_path}}`.'
+  solution_chmod_keys_correct:
+    category: Output
+    weight: 3
+    dimension: solution_correctness
+    criterion: 'The recommended `chmod` command for the `authorized_keys` file is
+      correct: `sudo chmod 600 {{authorized_keys_path}}`.'
+  output_includes_log_evidence:
+    category: Output
+    weight: 2
+    dimension: output_completeness
+    criterion: The final report includes the specific log line `{{log_error_message}}`
+      as evidence for the identified problem.
+  output_clear_explanation:
+    category: Output
+    weight: 2
+    dimension: output_clarity_and_organization
+    criterion: The explanation of the reason for the SSH failure is clear, concise,
+      and easy to understand for the user.

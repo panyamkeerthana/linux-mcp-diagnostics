@@ -1,0 +1,181 @@
+variables:
+  chown_command_suggestion: chown mysql:mysql /var/log/mariadb
+  disk_hog_file_name: DISK_HOG
+  disk_hog_file_size: 57.7GB
+  error_code_disk: 'Errcode: 28 "No space left on device"'
+  error_code_permission: 'errno: 13 "Permission denied"'
+  ip_address: "<ip>"
+  mariadb_data_directory: /var/lib/mysql
+  mariadb_log_directory: /var/log/mariadb
+  mariadb_log_file_path: /var/log/mariadb/mariadb.log
+  rm_command_suggestion: rm /var/lib/mysql/DISK_HOG
+  root_filesystem_mount_point: /
+  root_filesystem_used_percentage: 100%
+  service_name: mariadb
+  service_status: failed
+dimensions:
+- tool_use_efficiency:
+    description: Effectively and efficiently utilized tools to gather information or perform actions.
+    grading_type: score
+    scores:
+      0: Used tools incorrectly or made many irrelevant/redundant calls, hindering progress.
+      1: Used some tools correctly but with significant inefficiencies, errors, or irrelevant calls.
+      2: Used tools mostly correctly and efficiently, but with minor inefficiencies or a few unnecessary calls.
+      3: Used tools optimally, making correct and efficient calls to achieve the objective.
+- diagnostic_accuracy:
+    description: Underlying causes correctly identified based on information gathered.
+    grading_type: binary
+- problem_resolution_guidance:
+    description: Quality, correctness, and actionable nature of resolution steps provided.
+    grading_type: score
+    scores:
+      0: Provided no resolution steps, or steps were incorrect/misleading.
+      1: Provided some relevant steps, but they were incomplete, partially incorrect, or difficult to follow.
+      2: Provided mostly correct and actionable steps, but with minor omissions or ambiguities.
+      3: Provided clear, correct, and fully actionable steps to resolve the problem.
+- information_synthesis:
+    description: Ability to integrate diverse information into coherent explanation or summary.
+    grading_type: score
+    scores:
+      0: Failed to synthesize information, providing fragmented or contradictory details.
+      1: Synthesized some information but missed key connections or presented a confusing narrative.
+      2: Adequately synthesized information, but the explanation could be more cohesive or insightful.
+      3: Expertly synthesized all relevant information into a clear, concise, and insightful explanation.
+- output_clarity:
+    description: Readability, organization, and conciseness of responses.
+    grading_type: score
+    scores:
+      0: Response is unintelligible, irrelevant, or missing.
+      1: Response is difficult to understand, poorly structured, or contains significant extraneous information.
+      2: Response is generally clear and organized but could be more concise or better structured.
+      3: Response is exceptionally clear, well-organized, concise, and easy to comprehend.
+- completeness_of_request_fulfillment:
+    description: All explicit and implicit parts of user's request addressed.
+    grading_type: binary
+criteria:
+  tool_use_core_diagnostics:
+    category: Tools
+    weight: 3
+    dimension: tool_use_efficiency
+    criterion: The assistant effectively utilized core diagnostic tools to gather
+      initial service status and disk usage information.
+    tool_calls:
+      respect_order: false
+      required:
+      - linux-mcp-server__get_service_status:
+          min_calls: 1
+          params:
+            host: '{{ip_address}}'
+            service_name: '{{service_name}}'
+      - linux-mcp-server__get_disk_usage:
+          min_calls: 1
+          params:
+            host: '{{ip_address}}'
+  tool_use_targeted_fs_investigation:
+    category: Tools
+    weight: 3
+    dimension: tool_use_efficiency
+    criterion: The assistant used targeted file system investigation tools to pinpoint
+      the disk hog and check relevant log directory status.
+    tool_calls:
+      respect_order: false
+      required:
+      - linux-mcp-server__list_files:
+          min_calls: 1
+          params:
+            host: '{{ip_address}}'
+            path: '{{mariadb_data_directory}}'
+            order_by: size
+            sort: descending
+            top_n: 10
+      - linux-mcp-server__list_files:
+          min_calls: 1
+          params:
+            host: '{{ip_address}}'
+            path: '{{mariadb_log_directory}}'
+            order_by: size
+            sort: descending
+            top_n: 10
+  tool_use_optional_exploration:
+    category: Tools
+    weight: 1
+    dimension: tool_use_efficiency
+    criterion: The assistant engaged in additional file system exploration or searched
+      for other extensions, demonstrating thoroughness or problem-solving initiative.
+    tool_calls:
+      respect_order: false
+      optional:
+      - linux-mcp-server__list_files:
+          min_calls: 1
+          params:
+            host: '{{ip_address}}'
+            path: /
+            order_by: size
+            sort: descending
+            top_n: 10
+      - linux-mcp-server__list_directories:
+          min_calls: 1
+          params:
+            host: '{{ip_address}}'
+            path: /
+            order_by: size
+            sort: descending
+            top_n: 5
+      - extensionmanager__search_available_extensions:
+          min_calls: 1
+          params: {}
+      prohibited: []
+  diagnostic_accuracy_service_status:
+    category: Accuracy
+    weight: 3
+    dimension: diagnostic_accuracy
+    criterion: The assistant correctly identifies the MariaDB service status as '{{service_status}}'.
+  diagnostic_accuracy_disk_usage:
+    category: Accuracy
+    weight: 3
+    dimension: diagnostic_accuracy
+    criterion: The assistant correctly identifies the root filesystem '{{root_filesystem_mount_point}}'
+      as '{{root_filesystem_used_percentage}}' full.
+  diagnostic_accuracy_disk_hog:
+    category: Accuracy
+    weight: 3
+    dimension: diagnostic_accuracy
+    criterion: The assistant correctly identifies '{{disk_hog_file_name}}' (size '{{disk_hog_file_size}}')
+      in '{{mariadb_data_directory}}' as the primary cause of the disk space issue.
+  diagnostic_accuracy_permission_denied:
+    category: Accuracy
+    weight: 3
+    dimension: diagnostic_accuracy
+    criterion: The assistant correctly identifies the '{{error_code_permission}}'
+      error related to writing to '{{mariadb_log_file_path}}' as a blocker.
+  problem_resolution_guidance_disk_hog_fix:
+    category: Resolution
+    weight: 3
+    dimension: problem_resolution_guidance
+    criterion: The assistant provides the correct command to manually remove the '{{disk_hog_file_path}}'
+      file.
+  problem_resolution_guidance_permission_fix:
+    category: Resolution
+    weight: 3
+    dimension: problem_resolution_guidance
+    criterion: The assistant provides the correct command to manually fix permissions
+      on the '{{mariadb_log_directory}}' directory.
+  information_synthesis_coherence:
+    category: Reasoning
+    weight: 3
+    dimension: information_synthesis
+    criterion: The assistant's summary coherently integrates all findings (service
+      status, disk usage, disk hog, permissions) into a logical explanation of the
+      root causes.
+  output_clarity_readability_organization:
+    category: Output
+    weight: 2
+    dimension: output_clarity
+    criterion: The final response is well-structured, easy to read, and clearly separates
+      findings, root causes, and next steps.
+  completeness_of_blocker_identification:
+    category: Completeness
+    weight: 3
+    dimension: completeness_of_request_fulfillment
+    criterion: The assistant successfully identified all primary blockers (disk space
+      and file permission issues) preventing the MariaDB service from starting.

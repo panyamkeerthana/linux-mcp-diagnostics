@@ -1,87 +1,108 @@
+variables:
+  service_name: httpd
+  target_port: 8088
+  selinux_state: enforcing
+  standard_http_port: 80
+  config_file: /etc/httpd/conf/httpd.conf
+
 dimensions:
-- diagnosis_accuracy: Root cause correctly identified.
-  grading_type: score
-  scores:
-    0: Failed to identify the problem or completely incorrect diagnosis.
-    1: Partially identified but missed the SELinux root cause.
-    2: Identified SELinux but didn't fully explain the port binding problem.
-    3: Correctly identified SELinux enforcing mode blocking port 8088 as root cause.
-- solution_correctness: Proposed solutions would resolve the problem.
-  grading_type: score
-  scores:
-    0: Solutions would not fix the problem or cause additional issues.
-    1: Partially correct but incomplete or only partially resolves the issue.
-    2: Would work but missing important details or best practices.
-    3: Completely correct and would fully resolve the issue.
-- solution_completeness: Solutions include all necessary steps for implementation.
-  grading_type: binary
-- factual_accuracy: All information provided is factually correct.
-  grading_type: binary
-- clarity_and_organization: Readability, structure, and presentation quality.
-  grading_type: score
-  scores:
-    0: Unintelligible or completely unorganized.
-    1: Difficult to understand or poorly structured.
-    2: Generally clear and organized but could be improved.
-    3: Exceptionally clear, well-structured, and easy to follow.
+- diagnosis_accuracy:
+    description: Root cause correctly identified.
+    grading_type: score
+    scores:
+      0: Failed to identify the problem or completely incorrect diagnosis.
+      1: Partially identified but missed the SELinux root cause.
+      2: Identified SELinux but didn't fully explain the port binding problem.
+      3: Correctly identified SELinux enforcing mode blocking port 8088 as root cause.
+- solution_correctness:
+    description: Proposed solutions would resolve the problem.
+    grading_type: score
+    scores:
+      0: Solutions would not fix the problem or cause additional issues.
+      1: Partially correct but incomplete or only partially resolves the issue.
+      2: Would work but missing important details or best practices.
+      3: Completely correct and would fully resolve the issue.
+- solution_completeness:
+    description: Solutions include all necessary steps for implementation.
+    grading_type: binary
+- factual_accuracy:
+    description: All information provided is factually correct.
+    grading_type: binary
+- clarity_and_organization:
+    description: Readability, structure, and presentation quality.
+    grading_type: score
+    scores:
+      0: No structure; diagnosis, solution, and other information mixed together without separation.
+      1: Missing critical sections (diagnosis OR solution OR verification missing).
+      2: All sections present but not clearly separated with headers or paragraph breaks.
+      3: Clear sections with headers/numbering separating diagnosis, solution, and verification.
 criteria:
   identifies_service_failure:
     category: Diagnosis
     weight: 2
     dimension: diagnosis_accuracy
-    criterion: Identifies httpd service failed to start due to port binding issue.
+    criterion: Identifies {{service_name}} service failed to start due to port binding issue.
   identifies_port_binding_denial:
     category: Diagnosis
     weight: 3
     dimension: diagnosis_accuracy
-    criterion: Identifies permission denied error when binding to port 8088 as primary
+    criterion: Identifies permission denied error when binding to port {{target_port}} as primary
       symptom.
   identifies_selinux_root_cause:
     category: Diagnosis
     weight: 5
     dimension: diagnosis_accuracy
     criterion: Identifies SELinux `{{selinux_state}}` mode as root cause preventing
-      Apache from binding to port 8088.
+      Apache from binding to port {{target_port}}.
   explains_selinux_port_policy:
     category: Diagnosis
     weight: 2
     dimension: diagnosis_accuracy
     criterion: Explains SELinux only allows HTTP services to bind to specific ports
-      by default (e.g., 80, 443) and port 8088 is not allowed.
+      by default (e.g., {{standard_http_port}}, 443) and port {{target_port}} is not allowed.
   provides_semanage_solution:
     category: Solution
     weight: 5
     dimension: solution_correctness
-    criterion: Provides solution using `semanage port -a -t http_port_t -p tcp 8088`
-      to add port 8088 to allowed HTTP ports.
-  semanage_solution_complete:
+    criterion: Provides solution using `semanage port -a -t http_port_t -p tcp {{target_port}}`
+      to add port {{target_port}} to allowed HTTP ports.
+  semanage_solution_includes_tool_check:
     category: Solution
-    weight: 3
+    weight: 1
     dimension: solution_completeness
-    criterion: Semanage solution includes checking tool availability, correct command
-      with parameters, and restarting service.
+    criterion: Semanage solution includes checking tool availability (semanage/policycoreutils-python-utils).
+  semanage_solution_includes_command:
+    category: Solution
+    weight: 1
+    dimension: solution_completeness
+    criterion: Semanage solution includes correct command with parameters (semanage port -a -t http_port_t -p tcp {{target_port}}).
+  semanage_solution_includes_service_restart:
+    category: Solution
+    weight: 1
+    dimension: solution_completeness
+    criterion: Semanage solution includes restarting {{service_name}} service after adding the port.
   provides_alternative_port_solution:
     category: Solution
     weight: 2
     dimension: solution_correctness
     criterion: Provides alternative to change Apache configuration to use standard
-      port like 80 that SELinux allows by default.
+      port like {{standard_http_port}} that SELinux allows by default.
   alternative_solution_complete:
     category: Solution
     weight: 2
     dimension: solution_completeness
-    criterion: Alternative solution includes editing /etc/httpd/conf/httpd.conf,
+    criterion: Alternative solution includes editing {{config_file}},
       changing Listen directive, and restarting service.
   factual_accuracy_port_config:
     category: Accuracy
     weight: 2
     dimension: factual_accuracy
-    criterion: Correctly states Apache is configured to listen on port 8088.
+    criterion: Correctly states Apache is configured to listen on port {{target_port}}.
   factual_accuracy_selinux_state:
     category: Accuracy
     weight: 2
     dimension: factual_accuracy
-    criterion: Correctly states SELinux is in `enforcing` mode.
+    criterion: Correctly states SELinux is in `{{selinux_state}}` mode.
   overall_clarity_and_organization:
     category: Output
     weight: from_scores
