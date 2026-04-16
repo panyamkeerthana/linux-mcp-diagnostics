@@ -1,0 +1,177 @@
+variables:
+  authorized_keys_file: /home/testuser/.ssh/authorized_keys
+  correct_authorized_keys_permissions_ls: -rw-------.
+  correct_authorized_keys_permissions_octal: '600'
+  correct_owner_group: testuser testuser
+  correct_ssh_dir_permissions_ls: drwx------.
+  correct_ssh_dir_permissions_octal: '700'
+  initial_authorized_keys_owner_group: testuser root
+  initial_authorized_keys_permissions: -rw-r--r--.
+  initial_ssh_dir_owner_group: root root
+  initial_ssh_dir_permissions: drwxrwxrwx.
+  ip_address: "<ip>"
+  ssh_config_file: /etc/ssh/sshd_config
+  ssh_dir: /home/testuser/.ssh
+  user_home_dir: /home/testuser
+  username: testuser
+dimensions:
+- tool_use:
+    description: Correct tool selection, ordering, and parameter usage.
+    grading_type: score
+    scores:
+      0: Required tool not called at all or completely incorrect tool usage.
+      1: Tool called but with incorrect parameters or wrong order (if order is critical).
+      2: Tool called with correct order and parameters, but call count outside min/max bounds.
+      3: All applicable checks pass - tool called with correct count, order, and parameters.
+- problem_diagnosis_accuracy:
+    description: Root cause correctly and completely identified.
+    grading_type: binary
+- solution_effectiveness:
+    description: Solution successfully resolves the problem.
+    grading_type: binary
+- security_best_practices:
+    description: Actions adhere to security best practices without introducing vulnerabilities.
+    grading_type: binary
+- task_management:
+    description: Ability to plan, execute, and track problem-solving steps.
+    grading_type: score
+    scores:
+      0: No clear plan, erratic execution, or failed to track progress.
+      1: Basic plan present but poorly followed or significant steps missed.
+      2: Reasonable plan created and mostly followed, with minor inefficiencies in tracking.
+      3: Clear, comprehensive plan developed, executed logically, and progress tracked effectively.
+- communication_clarity:
+    description: Clarity, conciseness, and comprehensibility of responses.
+    grading_type: score
+    scores:
+      0: Completely unintelligible or no response.
+      1: Poorly organized or difficult to understand with frequent ambiguities.
+      2: Generally clear and understandable, but could be more concise or better organized.
+      3: Exceptionally clear, concise, and well-organized communication.
+- completeness_of_resolution:
+    description: Problem fully addressed including verification steps.
+    grading_type: binary
+criteria:
+  tool_use_initial_diagnostics:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Agent uses 'run_script_readonly' tool to gather initial diagnostic
+      information about SSH configuration and user file permissions.
+    tool_calls:
+      respect_order: false
+      required:
+      - linuxmcpserverarbitrary__run_script_readonly:
+          min_calls: 1
+          params:
+            host: '{{ip_address}}'
+            script: cat {{ssh_config_file}}
+      - linuxmcpserverarbitrary__run_script_readonly:
+          min_calls: 1
+          params:
+            host: '{{ip_address}}'
+            script: 'ls -ld {{user_home_dir}}
+
+              ls -ld {{ssh_dir}}
+
+              ls -l {{authorized_keys_file}}
+
+              '
+  tool_use_apply_fix:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Agent uses 'run_script_modify_interactive' tool to apply the necessary
+      permission and ownership corrections.
+    tool_calls:
+      respect_order: false
+      required:
+      - linuxmcpserverarbitrary__run_script_modify_interactive:
+          min_calls: 1
+          params:
+            host: '{{ip_address}}'
+            script: 'chown {{username}}:{{username}} {{ssh_dir}}
+
+              chmod {{correct_ssh_dir_permissions_octal}} {{ssh_dir}}
+
+              chown {{username}}:{{username}} {{authorized_keys_file}}
+
+              chmod {{correct_authorized_keys_permissions_octal}} {{authorized_keys_file}}
+
+              '
+  tool_use_verify_fix:
+    category: Tools
+    weight: 2
+    dimension: tool_use
+    criterion: Agent uses 'run_script_readonly' tool to verify the applied permissions
+      and ownership after the fix.
+    tool_calls:
+      respect_order: false
+      required:
+      - linuxmcpserverarbitrary__run_script_readonly:
+          min_calls: 1
+          params:
+            host: '{{ip_address}}'
+            script: 'ls -ld {{ssh_dir}}
+
+              ls -l {{authorized_keys_file}}
+
+              '
+  tool_use_task_list_tool:
+    category: Tools
+    weight: 1
+    dimension: tool_use
+    criterion: Agent uses the 'todo__todo_write' tool to manage the task list throughout
+      the session.
+    tool_calls:
+      respect_order: false
+      required:
+      - todo__todo_write:
+          min_calls: 1
+  diagnosis_correct_permissions_ownership:
+    category: Reasoning
+    weight: 3
+    dimension: problem_diagnosis_accuracy
+    criterion: The agent correctly identifies the root cause as incorrect permissions
+      and ownership on {{ssh_dir}} and {{authorized_keys_file}}.
+  solution_correct_ssh_dir_permissions:
+    category: Output
+    weight: 3
+    dimension: solution_effectiveness
+    criterion: The agent sets the permissions of {{ssh_dir}} to {{correct_ssh_dir_permissions_ls}}
+      ({{correct_ssh_dir_permissions_octal}}).
+  solution_correct_authorized_keys_permissions:
+    category: Output
+    weight: 3
+    dimension: solution_effectiveness
+    criterion: The agent sets the permissions of {{authorized_keys_file}} to {{correct_authorized_keys_permissions_ls}}
+      ({{correct_authorized_keys_permissions_octal}}).
+  solution_correct_ownership:
+    category: Output
+    weight: 3
+    dimension: solution_effectiveness
+    criterion: The agent sets the ownership of {{ssh_dir}} and {{authorized_keys_file}}
+      to {{correct_owner_group}}.
+  adheres_to_ssh_permissions_best_practices:
+    category: Security
+    weight: 3
+    dimension: security_best_practices
+    criterion: The applied permissions ({{correct_ssh_dir_permissions_octal}} for
+      {{ssh_dir}} and {{correct_authorized_keys_permissions_octal}} for {{authorized_keys_file}})
+      adhere to SSH security best practices.
+  task_list_management:
+    category: Completeness
+    weight: from_scores
+    dimension: task_management
+    criterion: from_scores
+  clear_next_steps_communication:
+    category: Output
+    weight: from_scores
+    dimension: communication_clarity
+    criterion: from_scores
+  includes_user_verification_step:
+    category: Completeness
+    weight: 2
+    dimension: completeness_of_resolution
+    criterion: The agent explicitly instructs the user to perform the final SSH login
+      verification.

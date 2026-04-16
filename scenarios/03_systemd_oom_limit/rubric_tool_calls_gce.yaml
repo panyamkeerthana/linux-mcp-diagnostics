@@ -1,0 +1,150 @@
+variables:
+  chronyd_service_unit_file: chronyd.service
+  daemon_reload_command: systemctl daemon-reload
+  full_fix_script_command: 'rm /etc/systemd/system.control/chronyd.service.d/50-MemoryMax.conf
+
+    systemctl daemon-reload
+
+    systemctl restart chronyd
+
+    systemctl status chronyd'
+  ip_address: "<ip>"
+  memory_max_dropin_path: /etc/systemd/system.control/chronyd.service.d/50-MemoryMax.conf
+  memory_max_value_bytes: '1048576'
+  modify_script_tool_name: linuxmcpserverarbitrary__run_script_modify_interactive
+  oom_issue_description: out-of-memory (OOM) situation
+  read_script_command: systemctl cat chronyd.service
+  read_script_tool_name: linuxmcpserverarbitrary__run_script_readonly
+  remove_memory_max_command: rm /etc/systemd/system.control/chronyd.service.d/50-MemoryMax.conf
+  restart_chronyd_command: systemctl restart chronyd
+  service_name: chronyd
+  status_chronyd_command: systemctl status chronyd
+dimensions:
+- tool_usage:
+    description: Correct tool selection and utilization.
+    grading_type: score
+    scores:
+      0: Required tool not called at all.
+      1: Tool called but with incorrect parameters or wrong order (if respect_order=true).
+      2: Tool called with correct order and parameters, but call count outside min/max bounds.
+      3: All applicable checks pass - tool called with correct count, order, and parameters.
+- problem_diagnosis:
+    description: Root cause accurately identified.
+    grading_type: binary
+- solution_appropriateness:
+    description: Solution technically sound and likely to resolve problem.
+    grading_type: binary
+- action_plan_completeness:
+    description: Proposed plan covers all necessary actions.
+    grading_type: score
+    scores:
+      0: No relevant steps or entirely incorrect plan provided.
+      1: Plan severely incomplete or contained significant errors.
+      2: Plan mostly complete but missed some important steps or details.
+      3: Action plan comprehensive, logical, and covered all necessary steps.
+- clarity_of_communication:
+    description: Clarity, conciseness, and understandability of explanations.
+    grading_type: score
+    scores:
+      0: Communication absent or completely unclear and confusing.
+      1: Communication poor, difficult to understand, or contained significant ambiguities.
+      2: Communication generally clear but could be more precise or better organized.
+      3: Communication exceptionally clear, concise, and easy to follow.
+- efficiency_of_resolution:
+    description: Direct and efficient progress toward resolution.
+    grading_type: score
+    scores:
+      0: No progress or extremely inefficient path taken.
+      1: Many unnecessary steps or highly inefficient approach.
+      2: Somewhat efficient but could have been more direct.
+      3: Direct and efficient path followed to resolve the issue.
+criteria:
+  initial_diagnosis_tool_called:
+    category: Tools
+    weight: 3
+    dimension: tool_usage
+    criterion: The assistant must call the tool to read the chronyd service unit file
+      for diagnosis.
+    tool_calls:
+      respect_order: true
+      required:
+      - '{{read_script_tool_name}}':
+          min_calls: 1
+          params:
+            host: '{{ip_address}}'
+            script: '{{read_script_command}}'
+            script_type: bash
+  fix_implementation_tool_called:
+    category: Tools
+    weight: 3
+    dimension: tool_usage
+    criterion: The assistant must call the tool to implement the proposed fix.
+    tool_calls:
+      respect_order: true
+      required:
+      - '{{modify_script_tool_name}}':
+          min_calls: 1
+          params:
+            host: '{{ip_address}}'
+            script: '{{full_fix_script_command}}'
+            script_type: bash
+  problem_correctly_diagnosed_as_memorymax:
+    category: Reasoning
+    weight: 3
+    dimension: problem_diagnosis
+    criterion: The assistant accurately identifies the 'MemoryMax' setting in the
+      drop-in unit file as the root cause of the OOM situation.
+  memory_max_value_identified:
+    category: Accuracy
+    weight: 2
+    dimension: problem_diagnosis
+    criterion: The assistant correctly identifies the MemoryMax value as {{memory_max_value_bytes}}
+      (1MB) from the service configuration.
+  solution_removes_memory_max_file:
+    category: Output
+    weight: 3
+    dimension: solution_appropriateness
+    criterion: The proposed solution correctly includes removing the '{{memory_max_dropin_path}}'
+      file.
+  solution_includes_daemon_reload:
+    category: Output
+    weight: 2
+    dimension: action_plan_completeness
+    criterion: The proposed solution includes the '{{daemon_reload_command}}' command
+      to apply systemd changes.
+  solution_includes_service_restart:
+    category: Output
+    weight: 2
+    dimension: action_plan_completeness
+    criterion: The proposed solution includes the '{{restart_chronyd_command}}' command
+      to restart the chronyd service.
+  solution_includes_status_check:
+    category: Output
+    weight: 1
+    dimension: action_plan_completeness
+    criterion: The proposed solution includes the '{{status_chronyd_command}}' command
+      to verify the service status after the fix.
+  solution_targets_correct_host:
+    category: Accuracy
+    weight: 2
+    dimension: solution_appropriateness
+    criterion: The solution correctly targets the specified host '{{ip_address}}'.
+  efficiency_of_resolution_score:
+    category: Completeness
+    weight: from_scores
+    dimension: efficiency_of_resolution
+    criterion: The assistant efficiently progresses towards resolving the user's problem
+      without unnecessary steps.
+  clarity_of_diagnostic_tool_description:
+    category: Output
+    weight: 1
+    dimension: clarity_of_communication
+    criterion: The description provided for the diagnostic tool call ('Read the chronyd
+      service unit file to check for memory limits.') is clear and understandable.
+  clarity_of_fix_tool_description:
+    category: Output
+    weight: 1
+    dimension: clarity_of_communication
+    criterion: The description provided for the fix tool call ('Remove the MemoryMax
+      drop-in configuration for chronyd, reload systemd, and restart chronyd.') is
+      clear and understandable.

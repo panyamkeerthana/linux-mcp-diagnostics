@@ -1,0 +1,228 @@
+variables:
+  diagnosis_text: httpd failed to start due to SELinux denying bind to port 8088
+  failed_port: '8088'
+  fix_text: Add port 8088 to the SELinux http_port_t type
+  getenforce_command: getenforce
+  port_check_command: ss -tuln | grep :8088
+  remote_host_ip: 192.168.65.24
+  selinux_http_port_type: http_port_t
+  selinux_mode: Enforcing
+  semanage_add_port_command: semanage port -a -t http_port_t -p tcp 8088
+  semanage_list_ports_command: semanage port -l | grep http_port_t
+  service_name: httpd
+  systemctl_start_command: systemctl start httpd
+  systemctl_status_command: systemctl status httpd
+  verification_text: Start httpd and check its status
+dimensions:
+- tool_use: Evaluates whether the assistant correctly used tools to accomplish the
+    task, considering selection, order, and parameters.
+  grading_type: score
+  scores:
+    0: Required tool not called at all
+    1: Tool called but with incorrect parameters OR wrong order (if respect_order=true)
+    2: Tool called with correct order and parameters, but call count outside min/max
+      bounds
+    3: All applicable checks pass - tool called with correct count, correct order
+      (if respect_order=true), correct parameters (if params specified)
+- diagnosis_accuracy: Evaluates the factual correctness of the identified problem
+    and its root cause.
+  grading_type: binary
+- solution_effectiveness: Evaluates whether the provided solution successfully resolves
+    the user's problem.
+  grading_type: binary
+- output_completeness: Evaluates whether all requested information was provided in
+    the final response.
+  grading_type: score
+  scores:
+    0: No relevant information provided
+    1: Missing most requested information
+    2: Some information provided but incomplete
+    3: All requested information comprehensively provided
+- output_clarity: Evaluates the readability, organization, and conciseness of the
+    final response.
+  grading_type: score
+  scores:
+    0: Completely unintelligible or no response
+    1: Poorly organized or difficult to understand
+    2: Generally clear but could be improved
+    3: Exceptionally clear and well-organized
+- efficiency: Evaluates whether the assistant achieved the goal using an optimal number
+    of steps and tool calls without unnecessary or redundant actions.
+  grading_type: score
+  scores:
+    0: Highly inefficient with many unnecessary or redundant steps
+    1: Noticeably inefficient with some unnecessary steps or repeated actions
+    2: Generally efficient but with minor avoidable steps
+    3: Highly efficient, achieving the goal with optimal steps
+- proactive_problem_solving: Evaluates the assistant's ability to identify and investigate
+    potential underlying issues or gather necessary context without explicit user
+    prompts.
+  grading_type: score
+  scores:
+    0: Did not demonstrate any proactive problem-solving
+    1: Attempted to be proactive but failed or pursued irrelevant paths
+    2: Showed some proactive investigation, but could have been more thorough or direct
+    3: Effectively anticipated and investigated underlying issues, leading to a robust
+      solution
+- adherence_to_user_request: Evaluates how precisely the assistant understood and
+    addressed the specific requirements outlined in the user's initial prompt.
+  grading_type: binary
+criteria:
+  initial_httpd_status_check:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must perform an initial check of the '{{service_name}}'
+      service status on '{{remote_host_ip}}'.
+    tool_calls:
+      respect_order: false
+      required:
+      - linuxmcpserverarbitrary__run_script_readonly:
+          min_calls: 1
+          params:
+            host: '{{remote_host_ip}}'
+            script: '{{systemctl_status_command}}'
+      optional: []
+      prohibited: []
+  selinux_diagnostic_checks:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must check SELinux status ('{{getenforce_command}}')
+      and list SELinux HTTP port types ('{{semanage_list_ports_command}}') to diagnose
+      the problem.
+    tool_calls:
+      respect_order: false
+      required:
+      - linuxmcpserverarbitrary__run_script_readonly:
+          min_calls: 1
+          params:
+            host: '{{remote_host_ip}}'
+            script: '{{getenforce_command}}'
+      - linuxmcpserverarbitrary__run_script_readonly:
+          min_calls: 1
+          params:
+            host: '{{remote_host_ip}}'
+            script: '{{semanage_list_ports_command}}'
+      optional: []
+      prohibited: []
+  add_selinux_port_fix:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must use 'semanage port -a' to add '{{failed_port}}'
+      to the '{{selinux_http_port_type}}' SELinux type.
+    tool_calls:
+      respect_order: false
+      required:
+      - linuxmcpserverarbitrary__run_script_modify_interactive:
+          min_calls: 1
+          params:
+            host: '{{remote_host_ip}}'
+            script: '{{semanage_add_port_command}}'
+      optional: []
+      prohibited: []
+  start_service_after_fix:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must attempt to start the '{{service_name}}' service
+      after applying the fix.
+    tool_calls:
+      respect_order: false
+      required:
+      - linuxmcpserverarbitrary__run_script_modify_interactive:
+          min_calls: 1
+          params:
+            host: '{{remote_host_ip}}'
+            script: '{{systemctl_start_command}}'
+      optional: []
+      prohibited: []
+  final_service_status_verification:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: The assistant must verify the status of the '{{service_name}}' service
+      after attempting to start it post-fix.
+    tool_calls:
+      respect_order: false
+      required:
+      - linuxmcpserverarbitrary__run_script_readonly:
+          min_calls: 1
+          params:
+            host: '{{remote_host_ip}}'
+            script: '{{systemctl_status_command}}'
+      optional: []
+      prohibited: []
+  diagnosis_accuracy_selinux_port_bind:
+    category: Reasoning
+    weight: 3
+    dimension: diagnosis_accuracy
+    criterion: The final diagnosis correctly identifies SELinux preventing binding
+      to port {{failed_port}} as the root cause.
+  solution_effectiveness_service_running:
+    category: Solution
+    weight: 3
+    dimension: solution_effectiveness
+    criterion: The '{{service_name}}' service is reported as 'active (running)' and
+      listening on port '{{failed_port}}' in the final verification output.
+  output_completeness_sections:
+    category: Completeness
+    weight: from_scores
+    dimension: output_completeness
+    criterion: The final response must include distinct sections for 'Diagnosis',
+      'Fix', and 'Verification'.
+  output_clarity_and_organization:
+    category: Output
+    weight: from_scores
+    dimension: output_clarity
+    criterion: from_scores
+  efficiency_no_redundant_semanage_list:
+    category: Efficiency
+    weight: 2
+    dimension: efficiency
+    criterion: The assistant should not perform redundant '{{semanage_list_ports_command}}'
+      calls before applying the fix.
+    tool_calls:
+      respect_order: true
+      required: []
+      optional: []
+      prohibited:
+      - linuxmcpserverarbitrary__run_script_readonly: null
+  proactive_port_listening_check:
+    category: Reasoning
+    weight: 1
+    dimension: proactive_problem_solving
+    criterion: The assistant proactively checked if any other process was listening
+      on port '{{failed_port}}' using '{{port_check_command}}'.
+    tool_calls:
+      respect_order: true
+      required: []
+      optional:
+      - linuxmcpserverarbitrary__run_script_readonly:
+          min_calls: 1
+          params:
+            host: '{{remote_host_ip}}'
+            script: '{{port_check_command}}'
+      prohibited: []
+  todo_list_updated_correctly:
+    category: Completeness
+    weight: 2
+    dimension: output_completeness
+    criterion: The assistant must update the todo list with the correct diagnosis,
+      fix, and verification steps.
+    tool_calls:
+      respect_order: false
+      required:
+      - todo__todo_write:
+          min_calls: 1
+          params:
+            content: '- [x] Diagnosis: {{diagnosis_text}}.
+
+              - [x] Fix: {{fix_text}}.
+
+              - [x] Verification: {{verification_text}}.
+
+              '
+      optional: []
+      prohibited: []
