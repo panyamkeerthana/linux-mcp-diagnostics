@@ -34,17 +34,6 @@ dimensions:
       1: Missing explanations for diagnosis OR fix OR verification steps.
       2: All steps present but lack context (commands without explanation of purpose).
       3: Each step includes both commands and explanation of why it's needed.
-- problem_solving_efficiency:
-    description: Efficiency of approach, minimizing unnecessary steps.
-    grading_type: score
-    scores:
-    0: Highly inefficient with many irrelevant steps.
-    1: Somewhat inefficient with several redundant steps.
-    2: Generally efficient with minor inefficiencies.
-    3: Highly efficient, direct path to solution.
-- safety_and_best_practices:
-    description: Safety protocols and best practices followed.
-    grading_type: binary
 - task_autonomy:
     description: Task completed without requiring additional user intervention
     grading_type: binary
