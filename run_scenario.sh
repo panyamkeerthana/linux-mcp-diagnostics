@@ -28,17 +28,17 @@ case "$SCENARIO" in
         SCENARIO_DIR="scenarios/02_ssh_permissions"
         PROMPT="A user named \"testuser\" cannot log in via SSH using public key authentication and receives \"Permission denied\" when connecting to testuser@$VM_IP. Diagnose the root cause and fix the system so secure SSH login works again."
         ;;
-    4)
-        SCENARIO_DIR="scenarios/04_oom_kill"
+    3)
+        SCENARIO_DIR="scenarios/03_systemd_oom_limit"
         PROMPT="The chronyd service on $VM_IP is crashing or failing to stay active. Job for chronyd.service failed because of an out-of-memory (OOM) siutation. Provide diagnosis and a fix for this."
         ;;
-    5)
-        SCENARIO_DIR="scenarios/05_cascading_db_failure"
+    4)
+        SCENARIO_DIR="scenarios/04_cascading_db_failure"
         PROMPT="The MariaDB service on $VM_IP won't start. I suspect it might be a disk issue, but even after checking that, it still won't stay running. Can you do a full diagnosis and fix all the blockers?"
         ;;
     *)
         echo "Error: Unknown scenario number: $SCENARIO"
-        echo "Valid scenarios: 1, 2, 4, 5"
+        echo "Valid scenarios: 1, 2, 3, 4"
         exit 1
         ;;
 esac
