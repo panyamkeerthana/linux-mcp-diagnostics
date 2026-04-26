@@ -1,0 +1,87 @@
+variables:
+  host_ip: "<ip>"
+  service_name: chronyd
+  memory_limit_bytes: 1048576
+  dropin_dir: /etc/systemd/system.control/chronyd.service.d/
+  dropin_file: /etc/systemd/system.control/chronyd.service.d/50-MemoryMax.conf
+
+dimensions:
+- tool_use:
+    description: Correct read-only tool selection, parameters, and sequencing.
+    grading_type: score
+    scores:
+      0: Required tool not called at all.
+      1: Tool called with incorrect parameters or wrong order.
+      2: Tool called correctly but call count outside min/max bounds.
+      3: All checks pass - correct count, order, and parameters.
+
+criteria:
+  service_status_check:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Check {{service_name}} service status using get_service_status.
+    tool_calls:
+      respect_order: false
+      required:
+        - linuxmcpserver__get_service_status:
+            min_calls: 1
+            params:
+              host: '{{host_ip}}'
+              service_name: '{{service_name}}'
+
+  service_logs_check:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Check {{service_name}} logs for OOM errors using get_journal_logs.
+    tool_calls:
+      respect_order: false
+      required:
+        - linuxmcpserver__get_journal_logs:
+            min_calls: 1
+            params:
+              host: '{{host_ip}}'
+              unit: '{{service_name}}'
+
+  systemd_service_properties_check:
+    category: Tools
+    weight: 2
+    dimension: tool_use
+    criterion: Check systemd service properties including memory limits using execute_command.
+    tool_calls:
+      respect_order: false
+      required:
+        - linuxmcpserver__execute_command:
+            min_calls: 1
+            params:
+              host: '{{host_ip}}'
+              command: systemctl show {{service_name}} | grep Memory
+
+  dropin_file_read:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Read drop-in configuration file at {{dropin_file}} using read_file.
+    tool_calls:
+      respect_order: false
+      required:
+        - linuxmcpserver__read_file:
+            min_calls: 1
+            params:
+              host: '{{host_ip}}'
+              path: '{{dropin_file}}'
+
+  dropin_directory_list:
+    category: Tools
+    weight: 2
+    dimension: tool_use
+    criterion: List drop-in directory at {{dropin_dir}} using execute_command.
+    tool_calls:
+      respect_order: false
+      required:
+        - linuxmcpserver__execute_command:
+            min_calls: 1
+            params:
+              host: '{{host_ip}}'
+              command: ls -la {{dropin_dir}}

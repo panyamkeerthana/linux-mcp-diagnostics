@@ -1,0 +1,90 @@
+variables:
+  remote_host_ip: 192.168.65.24
+  service_name: httpd
+  target_port: 8088
+  selinux_http_port_type: http_port_t
+  systemctl_status_command: systemctl status httpd
+  getenforce_command: getenforce
+  semanage_list_ports_command: semanage port -l | grep http_port_t
+  semanage_add_port_command: semanage port -a -t http_port_t -p tcp 8088
+  systemctl_start_command: systemctl start httpd
+
+dimensions:
+- tool_use:
+    description: Correct GCE tool selection, parameters, and sequencing.
+    grading_type: score
+    scores:
+      0: Required tool not called at all.
+      1: Tool called with incorrect parameters or wrong order.
+      2: Tool called correctly but call count outside min/max bounds.
+      3: All checks pass - correct count, order, and parameters.
+
+criteria:
+  initial_service_status_check:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Check initial {{service_name}} service status using run_script_readonly.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_readonly:
+            min_calls: 1
+            params:
+              host: '{{remote_host_ip}}'
+              script: '{{systemctl_status_command}}'
+
+  selinux_status_check:
+    category: Tools
+    weight: 2
+    dimension: tool_use
+    criterion: Check SELinux status using run_script_readonly with getenforce.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_readonly:
+            min_calls: 1
+
+  selinux_port_list_check:
+    category: Tools
+    weight: 2
+    dimension: tool_use
+    criterion: List SELinux HTTP port types using run_script_readonly with semanage.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_readonly:
+            min_calls: 1
+
+  add_selinux_port_fix:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Add port {{target_port}} to SELinux http_port_t using run_script_modify_interactive.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_modify_interactive:
+            min_calls: 1
+
+  start_service_after_fix:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Start {{service_name}} service after fix using run_script_modify_interactive.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_modify_interactive:
+            min_calls: 1
+
+  final_service_status_verification:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Verify final {{service_name}} service status using run_script_readonly.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_readonly:
+            min_calls: 1

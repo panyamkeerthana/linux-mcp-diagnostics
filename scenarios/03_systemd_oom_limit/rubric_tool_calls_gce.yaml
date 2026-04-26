@@ -1,0 +1,87 @@
+variables:
+  remote_host_ip: 192.168.65.24
+  service_name: chronyd
+  memory_limit_bytes: 1048576
+  dropin_file: /etc/systemd/system.control/chronyd.service.d/50-MemoryMax.conf
+  systemctl_status_cmd: systemctl status chronyd
+  journalctl_cmd: journalctl -u chronyd -n 50
+  rm_dropin_cmd: rm /etc/systemd/system.control/chronyd.service.d/50-MemoryMax.conf
+  daemon_reload_cmd: systemctl daemon-reload
+  restart_service_cmd: systemctl restart chronyd
+
+dimensions:
+- tool_use:
+    description: Correct GCE tool selection, parameters, and sequencing.
+    grading_type: score
+    scores:
+      0: Required tool not called at all.
+      1: Tool called with incorrect parameters or wrong order.
+      2: Tool called correctly but call count outside min/max bounds.
+      3: All checks pass - correct count, order, and parameters.
+
+criteria:
+  initial_service_status_check:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Check {{service_name}} service status using run_script_readonly.
+    tool_calls:
+      respect_order: false
+      required:
+        - linuxmcpserverarbitrary__run_script_readonly:
+            min_calls: 1
+
+  service_logs_examination:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Examine {{service_name}} logs for OOM errors using run_script_readonly.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_readonly:
+            min_calls: 1
+
+  remove_memory_limit_dropin:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Remove memory limit drop-in file using run_script_modify_interactive.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_modify_interactive:
+            min_calls: 1
+
+  reload_systemd_daemon:
+    category: Tools
+    weight: 2
+    dimension: tool_use
+    criterion: Reload systemd daemon configuration using run_script_modify_interactive.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_modify_interactive:
+            min_calls: 1
+
+  restart_service_after_fix:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Restart {{service_name}} service after removing memory limit using run_script_modify_interactive.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_modify_interactive:
+            min_calls: 1
+
+  final_service_status_verification:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Verify {{service_name}} service status after fix using run_script_readonly.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_readonly:
+            min_calls: 1
