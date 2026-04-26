@@ -1,38 +1,48 @@
+variables:
+  service_name: chronyd
+  dropin_dir: /etc/systemd/system/chronyd.service.d/
+
 dimensions:
-- tool_use: Correct tool selection, ordering, and parameterization.
-  grading_type: score
-  scores:
+- tool_use:
+    description: Correct tool selection, ordering, and parameterization.
+    grading_type: score
+    scores:
     0: Required tool not called.
     1: Tool called with incorrect parameters or wrong order.
     2: Tool called correctly but call count outside min/max bounds.
     3: All checks pass - correct count, order, and parameters.
-- problem_diagnosis: Root cause accurately diagnosed from available information.
-  grading_type: binary
-- solution_appropriateness: Solution is relevant, effective, and safe.
-  grading_type: binary
-- output_completeness: All necessary information, steps, or actions provided.
-  grading_type: score
-  scores:
+- problem_diagnosis:
+    description: Root cause accurately diagnosed from available information.
+    grading_type: binary
+- solution_appropriateness:
+    description: Solution is relevant, effective, and safe.
+    grading_type: binary
+- output_completeness:
+    description: All necessary information, steps, or actions provided.
+    grading_type: score
+    scores:
     0: No relevant information or steps provided.
     1: Missing most requested information or critical steps.
     2: Some information or steps provided but incomplete.
     3: All necessary information and steps provided.
-- clarity_and_coherence: Readability, organization, and logical flow.
-  grading_type: score
-  scores:
+- clarity_and_coherence:
+    description: Readability, organization, and logical flow.
+    grading_type: score
+    scores:
     0: Unintelligible or no meaningful response.
     1: Poorly organized or difficult to understand.
     2: Generally clear and coherent but could be improved.
     3: Exceptionally clear, well-organized, and logically coherent.
-- adherence_to_protocol: Correctly followed interaction protocols (e.g., waiting
-    for approval).
-  grading_type: binary
+- adherence_to_protocol:
+    description: Correctly followed interaction protocols (e.g., waiting
+      for approval).
+    grading_type: binary
 criteria:
   initial_diagnosis_tool_call:
     category: Tools
     weight: 3
     dimension: tool_use
-    criterion: Diagnose chronyd service configuration.
+    criterion: Diagnose {{service_name}} service configuration.
   solution_application_tool_call:
     category: Tools
     weight: 3
@@ -42,12 +52,12 @@ criteria:
     category: Reasoning
     weight: 3
     dimension: problem_diagnosis
-    criterion: Identifies chronyd service has MemoryMax limit of 1048576 causing OOM.
+    criterion: Identifies {{service_name}} service has MemoryMax limit of 1048576 causing OOM.
   solution_appropriateness_remove_memory_max:
     category: Reasoning
     weight: 3
     dimension: solution_appropriateness
-    criterion: Solution correctly targets removal of /etc/systemd/system.control/chronyd.service.d/50-MemoryMax.conf.
+    criterion: Solution correctly targets removal of /etc/systemd/system.control/{{service_name}}.service.d/50-MemoryMax.conf.
   solution_appropriateness_includes_daemon_reload:
     category: Reasoning
     weight: 2
@@ -58,12 +68,12 @@ criteria:
     category: Reasoning
     weight: 2
     dimension: solution_appropriateness
-    criterion: Solution includes restarting chronyd service to apply new configuration.
+    criterion: Solution includes restarting {{service_name}} service to apply new configuration.
   output_completeness_includes_status_check:
     category: Completeness
     weight: 1
     dimension: output_completeness
-    criterion: Solution includes checking chronyd service status after fix.
+    criterion: Solution includes checking {{service_name}} service status after fix.
   adherence_to_protocol_waits_for_approval:
     category: Output
     weight: 3
