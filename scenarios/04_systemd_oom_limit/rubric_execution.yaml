@@ -1,6 +1,7 @@
 variables:
   service_name: chronyd
-  dropin_dir: /etc/systemd/system/chronyd.service.d/
+  memory_limit_bytes: 1048576
+  dropin_file: /etc/systemd/system.control/chronyd.service.d/50-MemoryMax.conf
 
 dimensions:
 - tool_use:
@@ -56,7 +57,7 @@ criteria:
     category: Reasoning
     weight: 3
     dimension: solution_correctness
-    criterion: Solution correctly targets removal of /etc/systemd/system.control/{{service_name}}.service.d/50-MemoryMax.conf.
+    criterion: Solution correctly targets removal of {{dropin_file}}.
   solution_correctness_includes_daemon_reload:
     category: Reasoning
     weight: 2

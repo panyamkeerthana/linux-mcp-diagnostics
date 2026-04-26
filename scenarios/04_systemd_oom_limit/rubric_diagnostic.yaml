@@ -1,7 +1,9 @@
 variables:
   service_name: chronyd
-  dropin_dir: /etc/systemd/system/chronyd.service.d/
-  dropin_file: 50-MemoryMax.conf
+  memory_limit_bytes: 1048576
+  memory_limit_mb: 1
+  dropin_dir: /etc/systemd/system.control/chronyd.service.d/
+  dropin_file: /etc/systemd/system.control/chronyd.service.d/50-MemoryMax.conf
 
 dimensions:
 - diagnosis_accuracy:
@@ -54,7 +56,7 @@ criteria:
     category: Diagnosis
     weight: 4
     dimension: diagnosis_accuracy
-    criterion: Identifies drop-in configuration file (50-MemoryMax.conf in /etc/systemd/system/{{service_name}}.service.d/)
+    criterion: Identifies drop-in configuration file (50-MemoryMax.conf in {{dropin_dir}})
       enforcing the memory limit.
   log_evidence_gathering:
     category: Investigation
@@ -97,7 +99,7 @@ criteria:
     category: Accuracy
     weight: 2
     dimension: factual_accuracy
-    criterion: Correctly interprets MemoryMax value (1048576 = 1 MB) and explains
+    criterion: Correctly interprets MemoryMax value ({{memory_limit_bytes}} = {{memory_limit_mb}} MB) and explains
       why it causes OOM.
   explanation_clarity:
     category: Communication
