@@ -17,27 +17,27 @@ dimensions:
 - problem_diagnosis_accuracy:
     description: Root cause correctly identified from gathered information.
     grading_type: binary
-- solution_appropriateness:
+- solution_correctness:
     description: Solution is technically sound, safe, and addresses the
       problem.
     grading_type: binary
 - workflow_management:
-    description: Task flow effectively managed (planning, executing, tracking
-      progress).
+    description: Task flow managed through logical planning, execution, and tracking
+      of progress.
     grading_type: score
     scores:
-    0: No discernible plan or completely failed logical steps.
-    1: Plan executed poorly with significant deviations or inefficiencies.
-    2: Reasonable plan with minor inefficiencies or tracking inaccuracies.
-    3: Clear, logical, efficient workflow with accurate progress tracking.
+      0: No plan evident; random or illogical sequence of actions.
+      1: Plan evident but major steps skipped or executed out of order.
+      2: Logical sequence followed but with redundant steps or minor inefficiencies.
+      3: Clear sequence: diagnose → fix → verify, with no unnecessary steps.
 - communication_clarity:
     description: Clarity of actions, findings, and requests to user.
     grading_type: score
     scores:
-    0: Unintelligible or no response.
-    1: Poorly organized or difficult to understand.
-    2: Generally clear but could be improved.
-    3: Exceptionally clear and well-organized.
+      0: No communication or completely incomprehensible.
+      1: Missing critical communication (findings OR actions OR next steps missing).
+      2: All elements present but unclear or poorly organized.
+      3: Clear communication with well-organized findings, actions, and next steps.
 - task_completeness:
     description: All aspects of user's request fully addressed.
     grading_type: score
@@ -76,7 +76,7 @@ criteria:
     dimension: problem_diagnosis_accuracy
     criterion: Diagnoses root cause as incorrect permissions/ownership on {{ssh_dir}}
       and authorized_keys.
-  appropriate_fix_application_tool_call:
+  fix_application_tool_call:
     category: Tools
     weight: 3
     dimension: tool_use

@@ -32,10 +32,10 @@ dimensions:
     description: Readability, structure, and presentation quality.
     grading_type: score
     scores:
-    0: Unintelligible or completely unorganized.
-    1: Difficult to understand or poorly structured.
-    2: Generally clear and organized but could be improved.
-    3: Exceptionally clear, well-structured, and easy to follow.
+      0: No structure; diagnosis, solution, and other information mixed together without separation.
+      1: Missing critical sections (diagnosis OR solution OR verification missing).
+      2: All sections present but not clearly separated with headers or paragraph breaks.
+      3: Clear sections with headers/numbering separating diagnosis, solution, and verification.
 criteria:
   identifies_service_failure:
     category: Diagnosis
@@ -59,19 +59,28 @@ criteria:
     weight: 2
     dimension: diagnosis_accuracy
     criterion: Explains SELinux only allows HTTP services to bind to specific ports
-      by default (e.g., {{standard_http_port}}, 443) and port {{target_port}} is not allowed.
+      by default ({{standard_http_port}}, 443) and port {{target_port}} is not allowed.
   provides_semanage_solution:
     category: Solution
     weight: 5
     dimension: solution_correctness
     criterion: Provides solution using `semanage port -a -t http_port_t -p tcp {{target_port}}`
       to add port {{target_port}} to allowed HTTP ports.
-  semanage_solution_complete:
+  semanage_solution_includes_tool_check:
     category: Solution
-    weight: 3
+    weight: 1
     dimension: solution_completeness
-    criterion: Semanage solution includes checking tool availability, correct command
-      with parameters, and restarting service.
+    criterion: Semanage solution includes checking tool availability (semanage/policycoreutils-python-utils).
+  semanage_solution_includes_command:
+    category: Solution
+    weight: 1
+    dimension: solution_completeness
+    criterion: Semanage solution includes correct command with parameters (semanage port -a -t http_port_t -p tcp {{target_port}}).
+  semanage_solution_includes_service_restart:
+    category: Solution
+    weight: 1
+    dimension: solution_completeness
+    criterion: Semanage solution includes restarting {{service_name}} service after adding the port.
   provides_alternative_port_solution:
     category: Solution
     weight: 2

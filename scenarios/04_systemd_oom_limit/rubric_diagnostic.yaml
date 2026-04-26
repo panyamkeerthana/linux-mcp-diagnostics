@@ -39,10 +39,10 @@ dimensions:
     description: Readability and structure of response.
     grading_type: score
     scores:
-    0: Unintelligible or completely unorganized.
-    1: Difficult to understand or poorly structured.
-    2: Generally clear and organized but could be improved.
-    3: Exceptionally clear, well-structured, and easy to follow.
+      0: No structure; diagnosis, solution, and other information mixed together without separation.
+      1: Missing critical sections (diagnosis OR solution OR verification missing).
+      2: All sections present but not clearly separated with headers or paragraph breaks.
+      3: Clear sections with headers/numbering separating diagnosis, solution, and verification.
 criteria:
   root_cause_identification:
     category: Diagnosis
@@ -73,12 +73,26 @@ criteria:
     dimension: solution_correctness
     criterion: Solution correctly removes or increases memory limit using systemctl
       revert or editing/removing drop-in file.
-  complete_remediation_steps:
+  solution_includes_limit_removal:
     category: Remediation
-    weight: 3
+    weight: 1
     dimension: solution_completeness
-    criterion: Solution includes removing/reverting limit, reloading systemd, restarting
-      service, and verifying functionality.
+    criterion: Solution includes removing or reverting the memory limit.
+  solution_includes_systemd_reload:
+    category: Remediation
+    weight: 1
+    dimension: solution_completeness
+    criterion: Solution includes reloading systemd daemon configuration.
+  solution_includes_service_restart:
+    category: Remediation
+    weight: 1
+    dimension: solution_completeness
+    criterion: Solution includes restarting {{service_name}} service after changes.
+  solution_includes_verification:
+    category: Remediation
+    weight: 1
+    dimension: solution_completeness
+    criterion: Solution includes verifying service functionality after fix.
   factual_accuracy_memory_limit:
     category: Accuracy
     weight: 2

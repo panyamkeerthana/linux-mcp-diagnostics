@@ -30,10 +30,10 @@ dimensions:
     description: Clarity of diagnosis, fix, and verification explanations.
     grading_type: score
     scores:
-    0: Unintelligible or no explanation.
-    1: Poorly organized or difficult to understand.
-    2: Generally clear but could be improved.
-    3: Exceptionally clear and well-organized.
+      0: No explanation provided or completely incomprehensible.
+      1: Missing explanations for diagnosis OR fix OR verification steps.
+      2: All steps present but lack context (commands without explanation of purpose).
+      3: Each step includes both commands and explanation of why it's needed.
 - problem_solving_efficiency:
     description: Efficiency of approach, minimizing unnecessary steps.
     grading_type: score
@@ -53,7 +53,7 @@ criteria:
     category: Tools
     weight: 3
     dimension: tool_use
-    criterion: The assistant must effectively check the initial status of the {{service_name}}
+    criterion: The assistant must check the initial status of the {{service_name}}
       service, capturing both stdout and stderr, to diagnose the problem.
   check_port_listening:
     category: Tools
@@ -65,8 +65,7 @@ criteria:
     category: Tools
     weight: 3
     dimension: tool_use
-    criterion: The assistant must use appropriate tools to diagnose SELinux status
-      ('getenforce') and list configured http_port_t types ('semanage port -l').
+    criterion: The assistant must diagnose SELinux status using 'getenforce' and list configured http_port_t types using 'semanage port -l'.
   add_selinux_port_fix:
     category: Tools
     weight: 3

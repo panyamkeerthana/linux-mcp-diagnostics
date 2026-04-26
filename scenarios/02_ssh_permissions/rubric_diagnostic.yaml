@@ -42,10 +42,10 @@ dimensions:
     description: Readability, structure, and presentation quality.
     grading_type: score
     scores:
-    0: Unintelligible or completely unorganized.
-    1: Difficult to understand or poorly structured.
-    2: Generally clear and organized but could be improved.
-    3: Exceptionally clear, well-structured, and easy to follow.
+      0: No structure; diagnosis, solution, and other information mixed together without separation.
+      1: Missing critical sections (diagnosis OR solution OR verification missing).
+      2: All sections present but not clearly separated with headers or paragraph breaks.
+      3: Clear sections with headers/numbering separating diagnosis, solution, and verification.
 criteria:
   root_cause_identification:
     category: Diagnosis
@@ -81,30 +81,26 @@ criteria:
     weight: 2
     dimension: clarity_and_organization
     criterion: Explains why SSH is strict about permissions.
-  effective_problem_solving:
+  adapts_to_permission_obstacles:
     category: Problem Solving
     weight: 2
     dimension: solution_correctness
-    criterion: Demonstrates effective problem-solving by adapting to obstacles (e.g.,
-      permission denied errors) and finding alternative approaches.
+    criterion: Demonstrates problem-solving by adapting when encountering permission denied errors and finding alternative approaches.
   correct_ownership_remediation:
     category: Remediation
     weight: 4
     dimension: solution_correctness
-    criterion: Solution correctly addresses ownership on {{ssh_dir}} (e.g.,
-      setting to {{correct_ownership}}).
+    criterion: Solution correctly addresses ownership on {{ssh_dir}}, setting to {{correct_ownership}}.
   correct_directory_permissions_remediation:
     category: Remediation
     weight: 4
     dimension: solution_correctness
-    criterion: Solution correctly addresses .ssh directory permissions (e.g., setting
-      to {{ssh_dir_perms}}).
+    criterion: Solution correctly addresses .ssh directory permissions, setting to {{ssh_dir_perms}}.
   correct_key_permissions_remediation:
     category: Remediation
     weight: 4
     dimension: solution_correctness
-    criterion: Solution correctly addresses authorized_keys file permissions (e.g.,
-      setting to {{key_file_perms}}).
+    criterion: Solution correctly addresses authorized_keys file permissions, setting to {{key_file_perms}}.
   solution_completeness:
     category: Remediation
     weight: 3

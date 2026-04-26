@@ -14,8 +14,8 @@ dimensions:
 - problem_diagnosis:
     description: Root cause accurately diagnosed from available information.
     grading_type: binary
-- solution_appropriateness:
-    description: Solution is relevant, effective, and safe.
+- solution_correctness:
+    description: Solution is relevant, correct, and safe.
     grading_type: binary
 - output_completeness:
     description: All necessary information, steps, or actions provided.
@@ -29,45 +29,44 @@ dimensions:
     description: Readability, organization, and logical flow.
     grading_type: score
     scores:
-    0: Unintelligible or no meaningful response.
-    1: Poorly organized or difficult to understand.
-    2: Generally clear and coherent but could be improved.
-    3: Exceptionally clear, well-organized, and logically coherent.
+      0: No structure or completely incomprehensible.
+      1: Missing critical sections (diagnosis OR fix OR verification missing).
+      2: All sections present but not clearly separated or poorly organized.
+      3: Clear sections with headers separating diagnosis, fix, and verification steps.
 - adherence_to_protocol:
-    description: Correctly followed interaction protocols (e.g., waiting
-      for approval).
+    description: Correctly followed interaction protocols, waiting for approval before applying changes.
     grading_type: binary
 criteria:
   initial_diagnosis_tool_call:
     category: Tools
     weight: 3
     dimension: tool_use
-    criterion: Diagnose {{service_name}} service configuration.
+    criterion: Check {{service_name}} service status and examine logs to diagnose the failure.
   solution_application_tool_call:
     category: Tools
     weight: 3
     dimension: tool_use
-    criterion: Apply fix using.
+    criterion: Apply fix by removing or modifying the memory limit configuration.
   problem_diagnosis_correctly_identified_memory_limit:
     category: Reasoning
     weight: 3
     dimension: problem_diagnosis
     criterion: Identifies {{service_name}} service has MemoryMax limit of 1048576 causing OOM.
-  solution_appropriateness_remove_memory_max:
+  solution_correctness_remove_memory_max:
     category: Reasoning
     weight: 3
-    dimension: solution_appropriateness
+    dimension: solution_correctness
     criterion: Solution correctly targets removal of /etc/systemd/system.control/{{service_name}}.service.d/50-MemoryMax.conf.
-  solution_appropriateness_includes_daemon_reload:
+  solution_correctness_includes_daemon_reload:
     category: Reasoning
     weight: 2
-    dimension: solution_appropriateness
+    dimension: solution_correctness
     criterion: Solution includes systemctl daemon-reload for systemd to recognize
       changes.
-  solution_appropriateness_includes_service_restart:
+  solution_correctness_includes_service_restart:
     category: Reasoning
     weight: 2
-    dimension: solution_appropriateness
+    dimension: solution_correctness
     criterion: Solution includes restarting {{service_name}} service to apply new configuration.
   output_completeness_includes_status_check:
     category: Completeness

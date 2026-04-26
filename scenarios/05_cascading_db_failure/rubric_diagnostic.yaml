@@ -50,10 +50,10 @@ dimensions:
     description: Readability, organization, and helpfulness of response.
     grading_type: score
     scores:
-    0: Unintelligible or no response.
-    1: Poorly organized or difficult to understand.
-    2: Generally clear but could be improved.
-    3: Exceptionally clear, well-organized, with actionable guidance for both issues.
+      0: No structure; diagnosis, solutions, and other information mixed together without separation.
+      1: Missing critical sections (diagnosis OR solutions OR verification missing).
+      2: All sections present but not clearly separated with headers or paragraph breaks.
+      3: Clear sections with headers/numbering separating diagnosis, solutions, and verification steps.
 criteria:
   identified_disk_space_issue:
     category: Diagnosis - Issue 1
