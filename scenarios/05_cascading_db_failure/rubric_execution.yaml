@@ -60,8 +60,7 @@ criteria:
     category: Tools
     weight: 3
     dimension: tool_use
-    criterion: Remediate issues - remove immutable attribute, delete large file, fix
-      log permissions, restart MariaDB.
+    criterion: Remediate issues - delete large file, fix log permissions, restart MariaDB.
   final_verification_tool_calls:
     category: Tools
     weight: 3
@@ -73,19 +72,16 @@ criteria:
     dimension: problem_diagnosis_accuracy
     criterion: Identifies disk usage at 100% and pinpoints {{disk_hog_file}} file in /var/lib/mysql
       (7.7G) as primary cause.
-  problem_diagnosis_accuracy_attributes_and_permissions:
+  problem_diagnosis_accuracy_permissions:
     category: Reasoning
     weight: 3
     dimension: problem_diagnosis_accuracy
-    criterion: Identifies immutable attribute on {{disk_hog_file}} and permission denied error
-      for {{service_name}}.log due to incorrect ownership (root:root) of /var/log/{{service_name}}.
+    criterion: Identifies permission denied error for {{service_name}}.log due to incorrect ownership (root:root) of {{log_dir}}.
   problem_resolution_correctness:
     category: Reasoning
     weight: 3
     dimension: problem_resolution_correctness
-    criterion: Successfully removes {{disk_hog_file}} (after handling immutable attribute)
-      and changes ownership of /var/log/{{service_name}} to mysql:mysql, resolving MariaDB
-      startup issues.
+    criterion: Successfully removes {{disk_hog_file}} and changes ownership of {{log_dir}} to {{db_user}}:{{db_group}}, resolving MariaDB startup issues.
   verification_completeness:
     category: Completeness
     weight: 3
