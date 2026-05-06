@@ -1,0 +1,101 @@
+variables:
+  remote_host_ip: 192.168.65.24
+  username: testuser
+  ssh_dir: /home/testuser/.ssh
+  authorized_keys_file: /home/testuser/.ssh/authorized_keys
+  home_dir: /home/testuser
+  sshd_config: /etc/ssh/sshd_config
+  ls_cmd_ssh_dir: ls -la /home/testuser/.ssh
+  ls_cmd_home_dir: ls -ld /home/testuser
+  chmod_ssh_dir: chmod 700 /home/testuser/.ssh
+  chmod_authorized_keys: chmod 600 /home/testuser/.ssh/authorized_keys
+  chown_ssh_dir: chown testuser:testuser /home/testuser/.ssh
+  chown_authorized_keys: chown testuser:testuser /home/testuser/.ssh/authorized_keys
+
+dimensions:
+- tool_use:
+    description: Correct GCE tool selection, parameters, and sequencing.
+    grading_type: score
+    scores:
+      0: Required tool not called at all.
+      1: Tool called with incorrect parameters or wrong order.
+      2: Tool called correctly but call count outside min/max bounds.
+      3: All checks pass - correct count, order, and parameters.
+
+criteria:
+  sshd_config_examination:
+    category: Tools
+    weight: 2
+    dimension: tool_use
+    criterion: Examine SSH daemon configuration at {{sshd_config}} using run_script_readonly.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_readonly:
+            min_calls: 1
+
+  initial_permissions_check:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Check initial permissions of {{ssh_dir}} and {{authorized_keys_file}} using run_script_readonly.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_readonly:
+            min_calls: 1
+
+  fix_ssh_dir_permissions:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Fix {{ssh_dir}} permissions to 700 using run_script_modify_interactive.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_modify_interactive:
+            min_calls: 1
+
+  fix_authorized_keys_permissions:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Fix {{authorized_keys_file}} permissions to 600 using run_script_modify_interactive.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_modify_interactive:
+            min_calls: 1
+
+  fix_ssh_dir_ownership:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Fix {{ssh_dir}} ownership to {{username}}:{{username}} using run_script_modify_interactive.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_modify_interactive:
+            min_calls: 1
+
+  fix_authorized_keys_ownership:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Fix {{authorized_keys_file}} ownership to {{username}}:{{username}} using run_script_modify_interactive.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_modify_interactive:
+            min_calls: 1
+
+  post_fix_permissions_verification:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Verify permissions after fix using run_script_readonly.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_readonly:
+            min_calls: 1

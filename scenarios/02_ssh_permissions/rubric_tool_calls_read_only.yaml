@@ -1,0 +1,73 @@
+variables:
+  host_ip: "<ip>"
+  username: testuser
+  ssh_dir: /home/testuser/.ssh
+  authorized_keys_file: /home/testuser/.ssh/authorized_keys
+  home_dir: /home/testuser
+  sshd_config: /etc/ssh/sshd_config
+
+dimensions:
+- tool_use:
+    description: Correct read-only tool selection, parameters, and sequencing.
+    grading_type: score
+    scores:
+      0: Required tool not called at all.
+      1: Tool called with incorrect parameters or wrong order.
+      2: Tool called correctly but call count outside min/max bounds.
+      3: All checks pass - correct count, order, and parameters.
+
+criteria:
+  sshd_config_file_read:
+    category: Tools
+    weight: 2
+    dimension: tool_use
+    criterion: Read SSH daemon configuration at {{sshd_config}} using read_file.
+    tool_calls:
+      respect_order: false
+      required:
+        - read_file:
+            min_calls: 1
+
+  ssh_service_logs_check:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Check SSH service logs using get_journal_logs.
+    tool_calls:
+      respect_order: false
+      required:
+        - get_journal_logs:
+            min_calls: 1
+
+  home_directory_permissions_check:
+    category: Tools
+    weight: 2
+    dimension: tool_use
+    criterion: Check {{home_dir}} permissions using execute_command.
+    tool_calls:
+      respect_order: false
+      required:
+        - execute_command:
+            min_calls: 1
+
+  ssh_directory_permissions_check:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Check {{ssh_dir}} permissions and ownership using execute_command.
+    tool_calls:
+      respect_order: false
+      required:
+        - execute_command:
+            min_calls: 1
+
+  authorized_keys_permissions_check:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Check {{authorized_keys_file}} permissions using execute_command or read_file.
+    tool_calls:
+      respect_order: false
+      required:
+        - execute_command:
+            min_calls: 1

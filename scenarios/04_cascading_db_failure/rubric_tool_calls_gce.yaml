@@ -1,0 +1,125 @@
+variables:
+  remote_host_ip: 192.168.65.24
+  service_name: mariadb
+  disk_hog_file: /var/lib/mysql/DISK_HOG
+  log_dir: /var/log/mariadb
+  db_user: mysql
+  db_group: mysql
+  db_data_dir: /var/lib/mysql
+  systemctl_status_cmd: systemctl status mariadb
+  df_cmd: df -h
+  find_large_files_cmd: find /var/lib/mysql -type f -size +100M -exec ls -lh {} \;
+  rm_disk_hog_cmd: rm /var/lib/mysql/DISK_HOG
+  ls_log_dir_cmd: ls -ld /var/log/mariadb
+  chown_log_dir_cmd: chown mysql:mysql /var/log/mariadb
+  restart_mariadb_cmd: systemctl restart mariadb
+
+dimensions:
+- tool_use:
+    description: Correct GCE tool selection, parameters, and sequencing.
+    grading_type: score
+    scores:
+      0: Required tool not called at all.
+      1: Tool called with incorrect parameters or wrong order.
+      2: Tool called correctly but call count outside min/max bounds.
+      3: All checks pass - correct count, order, and parameters.
+
+criteria:
+  initial_service_status_check:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Check {{service_name}} service status using run_script_readonly.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_readonly:
+            min_calls: 1
+
+  disk_space_check:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Check disk space usage using run_script_readonly.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_readonly:
+            min_calls: 1
+
+  identify_large_files:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Identify large files in {{db_data_dir}} using run_script_readonly.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_readonly:
+            min_calls: 1
+
+  delete_disk_hog_file:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Delete {{disk_hog_file}} using run_script_modify_interactive.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_modify_interactive:
+            min_calls: 1
+
+  check_log_directory_permissions:
+    category: Tools
+    weight: 2
+    dimension: tool_use
+    criterion: Check {{log_dir}} permissions using run_script_readonly.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_readonly:
+            min_calls: 1
+
+  fix_log_directory_ownership:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Fix {{log_dir}} ownership to {{db_user}}:{{db_group}} using run_script_modify_interactive.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_modify_interactive:
+            min_calls: 1
+
+  restart_mariadb_service:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Restart {{service_name}} service after fixes using run_script_modify_interactive.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_modify_interactive:
+            min_calls: 1
+
+  final_service_verification:
+    category: Tools
+    weight: 3
+    dimension: tool_use
+    criterion: Verify {{service_name}} service is running using run_script_readonly.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_readonly:
+            min_calls: 1
+
+  final_disk_space_verification:
+    category: Tools
+    weight: 2
+    dimension: tool_use
+    criterion: Verify disk space reduced after cleanup using run_script_readonly.
+    tool_calls:
+      respect_order: false
+      required:
+        - run_script_readonly:
+            min_calls: 1
