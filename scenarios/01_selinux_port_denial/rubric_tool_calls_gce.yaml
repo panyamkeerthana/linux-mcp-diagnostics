@@ -30,9 +30,6 @@ criteria:
       required:
         - run_script_readonly:
             min_calls: 1
-            params:
-              host: '{{remote_host_ip}}'
-              script: '{{systemctl_status_command}}'
 
   selinux_status_check:
     category: Tools

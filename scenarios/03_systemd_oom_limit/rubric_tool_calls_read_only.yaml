@@ -24,11 +24,8 @@ criteria:
     tool_calls:
       respect_order: false
       required:
-        - linuxmcpserver__get_service_status:
+        - get_service_status:
             min_calls: 1
-            params:
-              host: '{{host_ip}}'
-              service_name: '{{service_name}}'
 
   service_logs_check:
     category: Tools
@@ -38,11 +35,8 @@ criteria:
     tool_calls:
       respect_order: false
       required:
-        - linuxmcpserver__get_journal_logs:
+        - get_journal_logs:
             min_calls: 1
-            params:
-              host: '{{host_ip}}'
-              unit: '{{service_name}}'
 
   systemd_service_properties_check:
     category: Tools
@@ -52,11 +46,8 @@ criteria:
     tool_calls:
       respect_order: false
       required:
-        - linuxmcpserver__execute_command:
+        - execute_command:
             min_calls: 1
-            params:
-              host: '{{host_ip}}'
-              command: systemctl show {{service_name}} | grep Memory
 
   dropin_file_read:
     category: Tools
@@ -66,11 +57,8 @@ criteria:
     tool_calls:
       respect_order: false
       required:
-        - linuxmcpserver__read_file:
+        - read_file:
             min_calls: 1
-            params:
-              host: '{{host_ip}}'
-              path: '{{dropin_file}}'
 
   dropin_directory_list:
     category: Tools
@@ -80,8 +68,5 @@ criteria:
     tool_calls:
       respect_order: false
       required:
-        - linuxmcpserver__execute_command:
+        - execute_command:
             min_calls: 1
-            params:
-              host: '{{host_ip}}'
-              command: ls -la {{dropin_dir}}

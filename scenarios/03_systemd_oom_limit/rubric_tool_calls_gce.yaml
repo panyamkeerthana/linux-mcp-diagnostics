@@ -28,7 +28,7 @@ criteria:
     tool_calls:
       respect_order: false
       required:
-        - linuxmcpserverarbitrary__run_script_readonly:
+        - run_script_readonly:
             min_calls: 1
 
   service_logs_examination:
