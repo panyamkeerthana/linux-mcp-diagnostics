@@ -2,7 +2,7 @@
 # receives “Permission denied” when connecting to testuser@<ip>. Diagnose the root cause
 # and fix the system so secure SSH login works again.
 ---
-- name: “Scenario 2: Break SSH Permissions”
+- name: "Scenario 2 - Break SSH Permissions"
   hosts: all
   become: yes
   vars:

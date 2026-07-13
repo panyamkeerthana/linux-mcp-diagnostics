@@ -8,10 +8,10 @@ dimensions:
     description: Correct tool selection, ordering, and completeness.
     grading_type: score
     scores:
-    0: Required tool not called or usage completely incorrect.
-    1: Tool called with incorrect parameters or wrong order.
-    2: Tool called correctly but call count outside min/max bounds.
-    3: All checks pass - correct count, order, and parameters.
+      0: Required tool not called or usage completely incorrect.
+      1: Tool called with incorrect parameters or wrong order.
+      2: Tool called correctly but call count outside min/max bounds.
+      3: All checks pass - correct count, order, and parameters.
 - diagnosis_accuracy:
     description: Root cause correctly identified.
     grading_type: binary
@@ -22,10 +22,10 @@ dimensions:
     description: All requested information provided.
     grading_type: score
     scores:
-    0: No relevant information provided.
-    1: Missing most requested information.
-    2: Some information provided but incomplete.
-    3: All requested information provided.
+      0: No relevant information provided.
+      1: Missing most requested information.
+      2: Some information provided but incomplete.
+      3: All requested information provided.
 - explanation_clarity:
     description: Clarity of diagnosis, fix, and verification explanations.
     grading_type: score
@@ -38,7 +38,7 @@ dimensions:
     description: Task completed without requiring additional user intervention
     grading_type: binary
 criteria:
-  initial_{{service_name}}_status_check:
+  initial_service_status_check:
     category: Tools
     weight: 3
     dimension: tool_use
@@ -61,13 +61,13 @@ criteria:
     dimension: tool_use
     criterion: The assistant must add TCP port {{target_port}} to the SELinux http_port_t
       type as part of the fix.
-  start_{{service_name}}_service:
+  start_service:
     category: Tools
     weight: 3
     dimension: tool_use
     criterion: The assistant must attempt to start the {{service_name}} service after
       applying the fix.
-  final_{{service_name}}_status_verification:
+  final_service_status_verification:
     category: Tools
     weight: 3
     dimension: tool_use
