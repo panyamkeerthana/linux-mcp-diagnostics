@@ -10,27 +10,27 @@ dimensions:
     description: Root cause of service failure correctly identified.
     grading_type: score
     scores:
-    0: Failed to identify the problem or completely incorrect diagnosis.
-    1: Partially identified but missed the OOM/memory limit root cause.
-    2: Identified memory/OOM but didn't fully explain the systemd limit configuration.
-    3: Correctly identified OOM kill due to systemd memory limit and located drop-in
-      file.
+      0: Failed to identify the problem or completely incorrect diagnosis.
+      1: Partially identified but missed the OOM/memory limit root cause.
+      2: Identified memory/OOM but didn't fully explain the systemd limit configuration.
+      3: Correctly identified OOM kill due to systemd memory limit and located drop-in
+        file.
 - investigation_process:
     description: Effectiveness of troubleshooting approach.
     grading_type: score
     scores:
-    0: Failed to gather relevant diagnostic information.
-    1: Gathered some information but missed critical evidence.
-    2: Gathered most relevant information with minor gaps.
-    3: Comprehensively investigated logs, service status, and configuration files.
+      0: Failed to gather relevant diagnostic information.
+      1: Gathered some information but missed critical evidence.
+      2: Gathered most relevant information with minor gaps.
+      3: Comprehensively investigated logs, service status, and configuration files.
 - solution_correctness:
     description: Proposed solution would resolve the OOM issue.
     grading_type: score
     scores:
-    0: Solution would not fix the problem or cause additional issues.
-    1: Partially correct but incomplete.
-    2: Would work but missing important details or verification steps.
-    3: Completely correct and would fully resolve the issue.
+      0: Solution would not fix the problem or cause additional issues.
+      1: Partially correct but incomplete.
+      2: Would work but missing important details or verification steps.
+      3: Completely correct and would fully resolve the issue.
 - solution_completeness:
     description: All necessary remediation steps included.
     grading_type: binary
@@ -48,13 +48,13 @@ dimensions:
 criteria:
   root_cause_identification:
     category: Diagnosis
-    weight: 5
+    weight: 3
     dimension: diagnosis_accuracy
     criterion: Identifies {{service_name}} is killed by OOM killer due to systemd memory limit
       (MemoryMax).
   configuration_file_identification:
     category: Diagnosis
-    weight: 4
+    weight: 3
     dimension: diagnosis_accuracy
     criterion: Identifies drop-in configuration file (50-MemoryMax.conf in {{dropin_dir}})
       enforcing the memory limit.
@@ -71,7 +71,7 @@ criteria:
       OOM logs, inspecting systemd configuration).
   correct_remediation_approach:
     category: Remediation
-    weight: 5
+    weight: 3
     dimension: solution_correctness
     criterion: Solution correctly removes or increases memory limit using systemctl
       revert or editing/removing drop-in file.

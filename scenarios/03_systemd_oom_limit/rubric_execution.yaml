@@ -8,10 +8,10 @@ dimensions:
     description: Correct tool selection, ordering, and parameterization.
     grading_type: score
     scores:
-    0: Required tool not called.
-    1: Tool called with incorrect parameters or wrong order.
-    2: Tool called correctly but call count outside min/max bounds.
-    3: All checks pass - correct count, order, and parameters.
+      0: Required tool not called.
+      1: Tool called with incorrect parameters or wrong order.
+      2: Tool called correctly but call count outside min/max bounds.
+      3: All checks pass - correct count, order, and parameters.
 - problem_diagnosis:
     description: Root cause accurately diagnosed from available information.
     grading_type: binary
@@ -22,10 +22,10 @@ dimensions:
     description: All necessary information, steps, or actions provided.
     grading_type: score
     scores:
-    0: No relevant information or steps provided.
-    1: Missing most requested information or critical steps.
-    2: Some information or steps provided but incomplete.
-    3: All necessary information and steps provided.
+      0: No relevant information or steps provided.
+      1: Missing most requested information or critical steps.
+      2: Some information or steps provided but incomplete.
+      3: All necessary information and steps provided.
 - clarity_and_coherence:
     description: Readability, organization, and logical flow.
     grading_type: score

@@ -11,27 +11,27 @@ dimensions:
     description: Root cause of SSH authentication failure correctly identified.
     grading_type: score
     scores:
-    0: Failed to identify the problem or completely incorrect diagnosis.
-    1: Partially identified but missed the permission/ownership root cause.
-    2: Identified permissions but didn't fully explain specific directory or file problems.
-    3: Correctly identified incorrect permissions/ownership on {{ssh_dir}}
-      and/or authorized_keys as root cause.
+      0: Failed to identify the problem or completely incorrect diagnosis.
+      1: Partially identified but missed the permission/ownership root cause.
+      2: Identified permissions but didn't fully explain specific directory or file problems.
+      3: Correctly identified incorrect permissions/ownership on {{ssh_dir}}
+        and/or authorized_keys as root cause.
 - problem_identification:
     description: Effectiveness of investigation and evidence gathering.
     grading_type: score
     scores:
-    0: Failed to gather relevant diagnostic information.
-    1: Gathered some information but missed critical evidence.
-    2: Gathered most relevant information with minor gaps.
-    3: Comprehensively gathered all relevant diagnostic evidence.
+      0: Failed to gather relevant diagnostic information.
+      1: Gathered some information but missed critical evidence.
+      2: Gathered most relevant information with minor gaps.
+      3: Comprehensively gathered all relevant diagnostic evidence.
 - solution_correctness:
     description: Proposed solutions would resolve the SSH authentication problem.
     grading_type: score
     scores:
-    0: Solutions would not fix the problem or cause additional issues.
-    1: Partially correct but incomplete or only partially resolves the issue.
-    2: Would work but missing important details or best practices.
-    3: Completely correct and would fully resolve the issue.
+      0: Solutions would not fix the problem or cause additional issues.
+      1: Partially correct but incomplete or only partially resolves the issue.
+      2: Would work but missing important details or best practices.
+      3: Completely correct and would fully resolve the issue.
 - solution_completeness:
     description: Solutions include all necessary steps for implementation.
     grading_type: binary
@@ -49,7 +49,7 @@ dimensions:
 criteria:
   root_cause_identification:
     category: Diagnosis
-    weight: 5
+    weight: 3
     dimension: diagnosis_accuracy
     criterion: Identifies incorrect permissions/ownership on {{ssh_dir}}
       and/or {{authorized_keys_file}} as root cause of SSH authentication failure.
@@ -88,17 +88,17 @@ criteria:
     criterion: Demonstrates problem-solving by adapting when encountering permission denied errors and finding alternative approaches.
   correct_ownership_remediation:
     category: Remediation
-    weight: 4
+    weight: 3
     dimension: solution_correctness
     criterion: Solution correctly addresses ownership on {{ssh_dir}}, setting to {{correct_ownership}}.
   correct_directory_permissions_remediation:
     category: Remediation
-    weight: 4
+    weight: 3
     dimension: solution_correctness
     criterion: Solution correctly addresses .ssh directory permissions, setting to {{ssh_dir_perms}}.
   correct_key_permissions_remediation:
     category: Remediation
-    weight: 4
+    weight: 3
     dimension: solution_correctness
     criterion: Solution correctly addresses authorized_keys file permissions, setting to {{key_file_perms}}.
   solution_completeness:

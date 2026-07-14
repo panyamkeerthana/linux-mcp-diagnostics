@@ -10,18 +10,18 @@ dimensions:
     description: Root cause correctly identified.
     grading_type: score
     scores:
-    0: Failed to identify the problem or completely incorrect diagnosis.
-    1: Partially identified but missed the SELinux root cause.
-    2: Identified SELinux but didn't fully explain the port binding problem.
-    3: Correctly identified SELinux enforcing mode blocking port {{target_port}} as root cause.
+      0: Failed to identify the problem or completely incorrect diagnosis.
+      1: Partially identified but missed the SELinux root cause.
+      2: Identified SELinux but didn't fully explain the port binding problem.
+      3: Correctly identified SELinux enforcing mode blocking port {{target_port}} as root cause.
 - solution_correctness:
     description: Proposed solutions would resolve the problem.
     grading_type: score
     scores:
-    0: Solutions would not fix the problem or cause additional issues.
-    1: Partially correct but incomplete or only partially resolves the issue.
-    2: Would work but missing important details or best practices.
-    3: Completely correct and would fully resolve the issue.
+      0: Solutions would not fix the problem or cause additional issues.
+      1: Partially correct but incomplete or only partially resolves the issue.
+      2: Would work but missing important details or best practices.
+      3: Completely correct and would fully resolve the issue.
 - solution_completeness:
     description: Solutions include all necessary steps for implementation.
     grading_type: binary
@@ -50,7 +50,7 @@ criteria:
       symptom.
   identifies_selinux_root_cause:
     category: Diagnosis
-    weight: 5
+    weight: 3
     dimension: diagnosis_accuracy
     criterion: Identifies SELinux `{{selinux_state}}` mode as root cause preventing
       Apache from binding to port {{target_port}}.
@@ -62,7 +62,7 @@ criteria:
       by default ({{standard_http_port}}, 443) and port {{target_port}} is not allowed.
   provides_semanage_solution:
     category: Solution
-    weight: 5
+    weight: 3
     dimension: solution_correctness
     criterion: Provides solution using `semanage port -a -t http_port_t -p tcp {{target_port}}`
       to add port {{target_port}} to allowed HTTP ports.
